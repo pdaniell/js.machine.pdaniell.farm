@@ -10,7 +10,8 @@ module.exports = function(grunt) {
     var srcFiles = [
         'src/Main.js',
 
-        'src/FiniteStateAutomaton.js',
+        'src/Alphabet.js',
+        'src/FSA.js',
         'src/State.js'
     ];
 
@@ -34,7 +35,7 @@ module.exports = function(grunt) {
         },
 
         clean: {
-            build: ['dist/*']
+            build: ['dist/*', 'docs/*']
         },
 
         uglify: {
@@ -74,7 +75,7 @@ module.exports = function(grunt) {
     // Register Tasks 
     grunt.registerTask('build-dev', 'Build the machine.js file from source for development.', ['clean', 'concat:dev', 'uglify:dev']);
     grunt.registerTask('build-production', 'Build the machine.js file for production.', ['clean', 'concat:production', 'uglify:production']);
-    grunt.registerTask('docs', 'Generate documentation.', ['build-dev', 'shell:jsdoc' ]); 
+    grunt.registerTask('docs', 'Generate documentation.', ['clean', 'build-dev', 'shell:jsdoc' ]); 
 
     // Initialize Grunt
     grunt.initConfig(config);
