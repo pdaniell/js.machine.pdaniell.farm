@@ -23,7 +23,7 @@ module.exports = function(grunt) {
         concat: {
             dev: {
                 src: srcFiles,
-                dest: 'dist/machine-v<%= pkg.version %>-dev.js'
+                dest: 'dist/machine-v<%= pkg.version %>.js'
             },
 
             production: {
@@ -44,7 +44,7 @@ module.exports = function(grunt) {
             },
             dev: {
                 files: {
-                    'dist/machine-v<%= pkg.version %>-dev.min.js': '<%= concat.dev.dest %>'
+                    'dist/machine-v<%= pkg.version %>.min.js': '<%= concat.dev.dest %>'
                 }
 
             },
@@ -58,13 +58,13 @@ module.exports = function(grunt) {
         },
 
         shell: {
-            makedoc: {
+            jsdoc: {
                 options: {
                     stdout: true,
                     stderr: true,
                     failOnError: true
                 },
-                command: './node_modules/.bin/jsdoc ./dist/machine-v<%= pkg.version %>.js -d ./docs'
+                command: './node_modules/.bin/jsdoc <%= concat.dev.dest %> -d ./docs'
             }
         }
 
@@ -74,7 +74,7 @@ module.exports = function(grunt) {
     // Register Tasks 
     grunt.registerTask('build-dev', 'Build the machine.js file from source for development.', ['clean', 'concat:dev', 'uglify:dev']);
     grunt.registerTask('build-production', 'Build the machine.js file for production.', ['clean', 'concat:production', 'uglify:production']);
-    grunt.registerTask('docs', 'Generate documentation.', ['build-dev', 'shell:makedoc' ]); 
+    grunt.registerTask('docs', 'Generate documentation.', ['build-dev', 'shell:jsdoc' ]); 
 
     // Initialize Grunt
     grunt.initConfig(config);
@@ -84,4 +84,5 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-replace');
     grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-shell');
 }

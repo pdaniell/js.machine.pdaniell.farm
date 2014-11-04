@@ -5,8 +5,8 @@
      * Machine State constructor
      * @constructor
      * @memberof Machine
-     * @param {Object} config
-     * @param {String} name
+     * @param {Object} config A configuration literal.
+     * @param {String} config.name The name of the state; 
      **/
 
 
