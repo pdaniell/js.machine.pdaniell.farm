@@ -1,0 +1,29 @@
+{
+  "name": "machine.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/pdaniell/machine.js",
+  "authors": [
+    "pdaniell <pdaniell@mm.st>"
+  ],
+  "description": "Finite State Machine Library",
+  "main": "src/machine.js",
+  "moduleType": [
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "turing",
+    "machine",
+    "finite",
+    "state",
+    "automata"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
