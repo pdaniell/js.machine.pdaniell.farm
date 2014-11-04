@@ -3,7 +3,6 @@ documentation
 analysis
 node_modules
 bower_components
-phantomjs.exe
 docs
 jsdoc-template
 test/sandbox.html
@@ -33,9 +32,6 @@ nbproject
 *.sublime-workspace
 *.md.html
 
-# Dreamweaver added files
-_notes
-dwsync.xml
 
 # Komodo
 *.komodoproject
