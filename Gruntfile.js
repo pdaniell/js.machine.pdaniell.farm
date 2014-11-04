@@ -39,8 +39,8 @@ module.exports = function(grunt) {
 
         uglify: {
 
-            options: {  
-              	banner: '/*! <%= pkg.name %> (v<%= pkg.version %>)<%= grunt.template.today("dd-mm-yyyy") %> */\n'
+            options: {
+                banner: '/*! <%= pkg.name %> (v<%= pkg.version %>) <%= grunt.template.today("dd-mm-yyyy") %> */\n'
             },
             dev: {
                 files: {
@@ -55,6 +55,17 @@ module.exports = function(grunt) {
                 }
 
             },
+        },
+
+        shell: {
+            makedoc: {
+                options: {
+                    stdout: true,
+                    stderr: true,
+                    failOnError: true
+                },
+                command: './node_modules/.bin/jsdoc ./dist/machine-v<%= pkg.version %>.js -d ./docs'
+            }
         }
 
     };
@@ -63,7 +74,7 @@ module.exports = function(grunt) {
     // Register Tasks 
     grunt.registerTask('build-dev', 'Build the machine.js file from source for development.', ['clean', 'concat:dev', 'uglify:dev']);
     grunt.registerTask('build-production', 'Build the machine.js file for production.', ['clean', 'concat:production', 'uglify:production']);
-
+    grunt.registerTask('docs', 'Generate documentation.', ['build-dev', 'shell:makedoc' ]); 
 
     // Initialize Grunt
     grunt.initConfig(config);

@@ -1,6 +1,6 @@
-(function(){
+(function() {
 
-	//FSA.js
+    //FSA.js
 
 
 })();
