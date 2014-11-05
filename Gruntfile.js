@@ -11,10 +11,13 @@ module.exports = function(grunt) {
         'src/Main.js',
 
         'src/Alphabet.js',
+        'src/Transition.js',
         'src/FSA.js',
         'src/State.js'
     ];
 
+    var testFiles = [ './test/**.js' ]; 
+    var testSuite = srcFiles.concat(testFiles); 
 
     // Setup the config object
     var config = {
@@ -34,8 +37,87 @@ module.exports = function(grunt) {
 
         },
 
+        karma: {
+
+            options: {
+
+
+                // base path that will be used to resolve all patterns (eg. files, exclude)
+                basePath: '',
+
+
+                // frameworks to use
+                // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
+                frameworks: ['jasmine'],
+
+
+                // list of files / patterns to load in the browser
+                files: [],
+
+
+                // list of files to exclude
+                exclude: [],
+
+
+                // preprocess matching files before serving them to the browser
+                // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
+                preprocessors: {},
+
+
+                // test results reporter to use
+                // possible values: 'dots', 'progress'
+                // available reporters: https://npmjs.org/browse/keyword/karma-reporter
+                reporters: ['progress'],
+
+
+                // web server port
+                port: 9876,
+
+
+                // enable / disable colors in the output (reporters and logs)
+                colors: true,
+
+
+                // level of logging
+                // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
+                logLevel: 'INFO',
+
+
+                // enable / disable watching file and executing tests whenever any file changes
+                autoWatch: true,
+
+
+                // start these browsers
+                // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
+                browsers: ['Chrome'],
+
+
+                // Continuous Integration mode
+                // if true, Karma captures browsers, runs the tests and exits
+                singleRun: false
+
+            },
+
+            dev: {
+                options: {
+                    files:testSuite, 
+                }
+            },
+
+            production: {
+                options: {
+                    files: [
+                        '<%= concat.production.dest %>',
+                        //'machine.js',
+                        './test/**.js'
+                    ],
+                }
+
+            }
+        },
+
         clean: {
-            build: ['dist/*', 'docs/*']
+            build: ['dist/', 'docs/']
         },
 
         uglify: {
@@ -59,13 +141,22 @@ module.exports = function(grunt) {
         },
 
         shell: {
-            jsdoc: {
+            jsdocdev: {
                 options: {
                     stdout: true,
                     stderr: true,
                     failOnError: true
                 },
-                command: './node_modules/.bin/jsdoc <%= concat.dev.dest %> -d ./docs'
+                command: './node_modules/.bin/jsdoc <%= concat.dev.dest %> -d ./docs/dev'
+            },
+
+            jsdocproduction: {
+                options: {
+                    stdout: true,
+                    stderr: true,
+                    failOnError: true
+                },
+                command: './node_modules/.bin/jsdoc <%= concat.production.dest %> -d ./docs/production'
             }
         }
 
@@ -75,7 +166,10 @@ module.exports = function(grunt) {
     // Register Tasks 
     grunt.registerTask('build-dev', 'Build the machine.js file from source for development.', ['clean', 'concat:dev', 'uglify:dev']);
     grunt.registerTask('build-production', 'Build the machine.js file for production.', ['clean', 'concat:production', 'uglify:production']);
-    grunt.registerTask('docs', 'Generate documentation.', ['clean', 'build-dev', 'shell:jsdoc' ]); 
+    grunt.registerTask('docs-dev', 'Generate documentation for the development edition.', ['build-dev', 'shell:jsdocdev']);
+    grunt.registerTask('docs-production', 'Generate documentation for the development edition.', ['build-production', 'shell:jsdocproduction']);
+    grunt.registerTask('test-dev', 'Run tests for the development edition.', ['build-dev', 'karma:dev']);
+    grunt.registerTask('test-production', 'Run tests for the production edition.', ['build-production', 'karma:production']);
 
     // Initialize Grunt
     grunt.initConfig(config);
@@ -86,4 +180,5 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-replace');
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-shell');
+    grunt.loadNpmTasks('grunt-karma');
 }
