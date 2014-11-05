@@ -26,14 +26,14 @@
         },
 
         _setAlphabet: function(chars) {
-            this.alphabetSet = {};
+            this.alphabetSet = new Machine.HashSet(); 
 
             for (var i = 0; i < chars.length; i++) {
                 var character = chars.charAt(i);
-                this.alphabetSet[character] = character;
+                this.alphabetSet.add(character);
             }
 
-            this.alphabetSet[this.blank] = this.blank;
+            this.alphabetSet.add(this.blank);
 
         },
 
@@ -42,7 +42,7 @@
 
         /** @method **/
         contains: function(character) {
-            if (character in this.alphabetSet)
+            if (this.alphabetSet.contains(character))
                 return true;
 
             return false;
@@ -56,6 +56,8 @@
         }
 
     };
+
+    Machine.Alphabet.TALLY_NOTATION = new Machine.Alphabet({blank:"0", chars:"01"}); 
 
 
 })();

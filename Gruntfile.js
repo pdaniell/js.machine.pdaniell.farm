@@ -8,15 +8,22 @@
 module.exports = function(grunt) {
 
     var srcFiles = [
+        // Main File
         'src/Main.js',
 
+
+        //Utils 
+        'src/utils/HashTable.js', 
+        'src/utils/HashSet.js',
+
+        // Classes
         'src/Alphabet.js',
-        'src/Transition.js',
+        'src/Condition.js',
+        'src/Command.js',
         'src/FSA.js',
-        'src/State.js'
     ];
 
-    var testFiles = [ './test/**.js' ]; 
+    var testFiles = [ './test/**/*.js' ]; 
     var testSuite = srcFiles.concat(testFiles); 
 
     // Setup the config object
@@ -123,7 +130,7 @@ module.exports = function(grunt) {
         uglify: {
 
             options: {
-                banner: '/*! <%= pkg.name %> (v<%= pkg.version %>) <%= grunt.template.today("dd-mm-yyyy") %> */\n'
+                banner: '/*! <%= pkg.name %> (v<%= pkg.version %>) <%= grunt.template.today("dd-mmm-yyyy") %> */\n'
             },
             dev: {
                 files: {
