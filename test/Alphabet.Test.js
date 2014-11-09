@@ -11,6 +11,10 @@ describe("Alphabet Test Suite", function() {
         expect(alphabet.contains("D")).toBe(false); 
         expect(alphabet.getBlank()).toBe("A"); 
 
+
+        expect(alpabet.isCompatibleWith("ABABAAAAAAB")).toBe(true);
+        expect(alphabet.isCompatibleWith("ABC")).toBe(false);
+
     });
 
 

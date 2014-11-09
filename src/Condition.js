@@ -18,10 +18,8 @@
 
         // Private Methods
         _init: function(attribs) {
-            this.from = attribs.from;
+            this.state = attribs.state;
             this.character = attribs.character;
-
-            this.to = attribs.to;
 
             if (attribs.action && action in attribs &&
                 attribs.action in Machine.Transition.TRANSITION_ENUM) {
@@ -40,8 +38,8 @@
 
         // Public Methods
         /** @method **/
-        getFromState: function() {
-            return this.from;
+        getState: function() {
+            return this.state;
         },
 
         /** @method **/
@@ -51,8 +49,6 @@
 
 
     };
-
-
 
 
 

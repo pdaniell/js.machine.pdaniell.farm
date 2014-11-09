@@ -9,14 +9,13 @@
      * @param {String} attribs.chars A string containing all the characters in the alphabet
      * @param {String} attribs.blank The blank character
      **/
-    Machine.Alphabet = function(config) {
-        this._init(config);
+    Machine.Alphabet = function(attribs) {
+        this._init(attribs);
     }
 
     Machine.Alphabet.prototype = {
 
         // Private Methods
-
         _init: function(attribs) {
             this.blank = attribs.blank;
             if (this.blank.length != 1) {
@@ -48,11 +47,39 @@
             return false;
         },
 
+        /** @method **/
+        isCompatibleWith: function(s){
+            for (var i = 0; i < s.length; i++){
+                if(this.contains(s.charAt(i)) == false){    
+                    return false;                
+                }
+            }
+            return true;
+
+        },
 
         /** @method **/
         getBlank: function() {
             return this.blank;
 
+        }
+
+        /** @method **/
+        setBlank: function(blank){ 
+            this.blank = blank; 
+            this.addCharacter(this.blank); 
+        },
+
+
+        /** @method **/
+        addCharacter: function(character){
+            this.alphabetSet.add(character);
+        }, 
+
+
+        /** @method **/
+        removeCharacter: function(character){
+            this.alphabetSet.remove(character);
         }
 
     };
