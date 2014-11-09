@@ -16,8 +16,8 @@
     Machine.TransitionFunction.prototype{ 
         // Private Methods
         _init: function(attribs){
-            this.stateTable = attribs.stateTable; 
-            this.functionHashtable = new Machine.HashTable(); 
+            this.map = new Machine.Hashtable(); 
+            this.stat
 
         }, 
 

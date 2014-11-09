@@ -1,7 +1,7 @@
 describe("Alphabet Test Suite", function() {
     
 
-    it("Simple Alphabet", function() {
+    it("Simple Alphabet Constructor Test", function() {
 
         var alphabet = new Machine.Alphabet({
         	blank:"A", 
