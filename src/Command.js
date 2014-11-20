@@ -9,10 +9,9 @@
      * @param {Object} attribs The initialization literal.
      *
      **/
-    Machine.Command= function(attribs) {
+    Machine.Command = function(attribs) {
         this._init(attribs);
     };
-
 
 
 
@@ -20,19 +19,25 @@
 
         // Private Methods
         _init: function(attribs) {
-            this.to = attribs.to;
 
-            if (attribs.action && action in attribs &&
-                attribs.action in Machine.Transition.TRANSITION_ENUM) {
-                this.action = attribs.action;
-            } else {
-                this.action = undefined;
+            if (attribs.state instanceof Machine.State == false) {
+                throw new Error("attribs.state not of type Machine.State");
             }
 
-            if (attribs.argument && argument in attribs) {
+
+            this.state = attribs.state;
+
+            if (attribs.hasOwnProperty("action") &&
+                Machine.Command.isValidCommand(attribs.action)) {
+                this.action = attribs.action;
+            } else {
+                this.action = null;
+            }
+
+            if (attribs.hasOwnProperty("argument")) {
                 this.argument = attribs.argument;
             } else {
-                this.argument = undefined;
+                this.argument = null;
             }
 
         },
@@ -41,9 +46,26 @@
         // Public Methods
 
         /** @method **/
-        getToState: function() {
-            return this.to;
+        getState: function() {
+            return this.state;
         },
+
+        /** @method **/
+        setState: function(state) {
+
+            if (state instanceof Machine.State == false) {
+                throw new Error("attribs.state not of type Machine.State");
+            }
+            this.state = state;
+        },
+
+        /** @method **/
+        hasAction: function() { 
+            if(this.action == null){
+                return false; 
+            }
+            return true; 
+        }, 
 
         /** @method **/
         getAction: function() {
@@ -51,8 +73,36 @@
         },
 
         /** @method **/
+        setAction: function(action) {
+            this.action = action;
+        },
+
+        /** @method **/
+        removeAction: function() { 
+            this.action = null; 
+        }, 
+
+        /** @method **/
+        hasArgument: function() {
+            if(this.argument == null){
+                return false; 
+            }
+            return true; 
+        },
+
+        /** @method **/
         getArgument: function() {
             return this.argument;
+        },
+
+        /** @method **/
+        setArgument: function(argument) {
+            this.argument = argument;
+        }, 
+
+        /** @method **/
+        removeArgument: function(){
+            this.argument = null; 
         }
 
     };
@@ -88,12 +138,18 @@
 
 
     /** @constant **/
-    Machine.Command.TRANSITION_ENUM = {
-        MOVE_RIGHT: Machine.Command.MOVE_RIGHT,
-        MOVE_LEFT: Machine.Command.MOVE_LEFT,
-        ERASE: Machine.Command.ERASE,
-        WRITE: Machine.Command.WRITE,
-        NOOP: Machine.Command.NOOP
+    Machine.Command.CommandSet = new Machine.HashSet();
+    Machine.Command.CommandSet.add(Machine.Command.MOVE_RIGHT);
+    Machine.Command.CommandSet.add(Machine.Command.MOVE_LEFT);
+    Machine.Command.CommandSet.add(Machine.Command.ERASE);
+    Machine.Command.CommandSet.add(Machine.Command.WRITE);
+    Machine.Command.CommandSet.add(Machine.Command.NOOP);
+
+    /** @method 
+     *  @memberof Machine.Command
+     **/
+    Machine.Command.isValidCommand = function(command) {
+        return Machine.Command.CommandSet.contains(command);
     };
 
 

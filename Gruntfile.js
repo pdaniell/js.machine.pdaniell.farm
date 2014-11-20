@@ -21,6 +21,10 @@ module.exports = function(grunt) {
         'src/Condition.js',
         'src/Command.js',
         'src/FSA.js',
+        'src/State.js',
+        'src/StateTable.js',
+        'src/Tape.js',
+        'src/TransitionFunction.js'
     ];
 
     var testFiles = [ './test/**/*.js' ]; 
@@ -175,7 +179,7 @@ module.exports = function(grunt) {
     grunt.registerTask('build-production', 'Build the machine.js file for production.', ['clean', 'concat:production', 'uglify:production']);
     grunt.registerTask('docs-dev', 'Generate documentation for the development edition.', ['build-dev', 'shell:jsdocdev']);
     grunt.registerTask('docs-production', 'Generate documentation for the development edition.', ['build-production', 'shell:jsdocproduction']);
-    grunt.registerTask('test-dev', 'Run tests for the development edition.', ['build-dev', 'karma:dev']);
+    grunt.registerTask('test-dev', 'Run tests for the development edition.', ['karma:dev']);
     grunt.registerTask('test-production', 'Run tests for the production edition.', ['build-production', 'karma:production']);
 
     // Initialize Grunt

@@ -62,7 +62,7 @@
         getBlank: function() {
             return this.blank;
 
-        }
+        },
 
         /** @method **/
         setBlank: function(blank){ 

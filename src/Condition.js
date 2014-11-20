@@ -18,21 +18,13 @@
 
         // Private Methods
         _init: function(attribs) {
+
+            if(attribs.state instanceof Machine.State == false){
+                throw new  Error("attribs.state not of type Machine.State"); 
+            }
+
             this.state = attribs.state;
             this.character = attribs.character;
-
-            if (attribs.action && action in attribs &&
-                attribs.action in Machine.Transition.TRANSITION_ENUM) {
-                this.action = attribs.action;
-            } else {
-                this.action = undefined;
-            }
-
-            if (attribs.argument && argument in attribs) {
-                this.argument = attribs.argument;
-            } else {
-                this.argument = undefined;
-            }
 
         },
 
@@ -43,10 +35,23 @@
         },
 
         /** @method **/
+        setState: function(state){
+            if(state instanceof Machine.State == false){
+                throw new  Error("attribs.state not of type Machine.State"); 
+            }
+
+            this.state = state; 
+        }, 
+
+        /** @method **/
         getCharacter: function() {
             return this.character;
         },
 
+        /** @method **/
+        setCharacter: function(character){
+            this.character = character; 
+        }
 
     };
 

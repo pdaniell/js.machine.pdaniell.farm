@@ -13,7 +13,8 @@
     };
 
 
-    Machine.TransitionFunction.prototype{ 
+    Machine.State.prototype = { 
+
         // Private Methods
         _init: function(attribs){
             this.label = attribs.label; 
