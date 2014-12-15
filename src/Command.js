@@ -2,6 +2,8 @@
 
 
     /**
+     * This class encapsulates the information for what a machine should
+     * do when it is in a particular machine condition. 
      *
      * @class Command
      * @memberof Machine
