@@ -2,7 +2,7 @@
 
     /**
      *
-     * This class represents a Deterministic Finite State Automaton (DFA). For more information
+     * This class represents a Deterministic Finite  Automaton (DFA). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Deterministic_finite_automaton}
      * and also suggestions for fruther reading.
      *
@@ -10,6 +10,7 @@
      * @constructor
      * @memberof Machine
      * @param {Object} attribs A configuration
+     * 
     
      **/
     Machine.FSA = function(attribs) {
@@ -22,13 +23,20 @@
 
         // Private Methods
         _init: function(attribs) {
-            this.validate = attribs.validate;
-            this.setAlphabet(attribs.alphabet);
+            if(attribs.hasOwnProperty("alphabet")){
+                this.setAlphabet(attribs.alphabet);
+            } else { 
+                this.setAlphabet(Machiine.Alphabet.UNRESTRICTED);
+            }
+
+            // create an empty state table
+            // we'll add to it later
             this.stateTable = new Machine.StateTable();
 
-            this.stateTable.add(attribs.initialState);
-            this.setInitialState(attribs.initialState);
-            this.currentState = attribs.initialState;
+            this.currentState = null; 
+            this.is = false; 
+            this.hasHalted = false; 
+
             this.inputString = "";
             this.inputIndex = 0;
 
