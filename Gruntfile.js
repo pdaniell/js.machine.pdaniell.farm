@@ -158,7 +158,7 @@ module.exports = function(grunt) {
                     stderr: true,
                     failOnError: true
                 },
-                command: './node_modules/.bin/jsdoc <%= concat.dev.dest %> -d ./docs/dev'
+                command: './node_modules/.bin/jsdoc <%= concat.dev.dest %> ./README.md -d ./docs/dev'
             },
 
             jsdocproduction: {
@@ -167,7 +167,7 @@ module.exports = function(grunt) {
                     stderr: true,
                     failOnError: true
                 },
-                command: './node_modules/.bin/jsdoc <%= concat.production.dest %> -d ./docs/production'
+                command: './node_modules/.bin/jsdoc <%= concat.production.dest %> ./README.md -d ./docs/production'
             }
         }
 

@@ -19,7 +19,12 @@
         // Private Methods
         _init: function(attribs) {
             this.setAlphabet(attribs.alphabet); 
-            this.setChars(attribs.chars); 
+
+            if(attribs.hasOwnProperty("chars")) {
+                this.setChars(attribs.chars); 
+            } else {
+                this.setChars(""); //set it to the empty string
+            }
         },
 
 

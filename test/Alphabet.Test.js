@@ -30,5 +30,17 @@ describe("Alphabet Test Suite", function() {
     });
 
 
+        it("Tally Notation", function() {
+
+        var alphabet = Machine.Alphabet.UNRESTRICTED; 
+
+        expect(alphabet.contains("0")).toBe(true); 
+        expect(alphabet.contains("1")).toBe(true); 
+        expect(alphabet.getBlank()).toBe("0"); 
+
+    });
+
+
+
 
 });
