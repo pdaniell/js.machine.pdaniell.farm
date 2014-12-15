@@ -2,14 +2,15 @@
 
     /**
      *
-     * This class represents a Finite State Automaton (FSA). An FSA is a
+     * This class represents a Deterministic Finite State Automaton (DFA). For more information
+     * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Deterministic_finite_automaton}
+     * and also suggestions for fruther reading.
      *
      * @class FSA Finite State Automaton
      * @constructor
      * @memberof Machine
      * @param {Object} attribs A configuration
-     * @param {Boolean} attribs.validate
-     * @param {List} attribs.states A list of states
+    
      **/
     Machine.FSA = function(attribs) {
         this._init(attributes);

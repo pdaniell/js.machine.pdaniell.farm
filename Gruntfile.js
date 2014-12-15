@@ -20,7 +20,7 @@ module.exports = function(grunt) {
         'src/Alphabet.js',
         'src/Condition.js',
         'src/Command.js',
-        'src/FSA.js',
+        'src/DFA.js',
         'src/State.js',
         'src/StateTable.js',
         'src/Tape.js',
