@@ -2,11 +2,15 @@
 
 
     /**
-     *
+     * A class which usually encapsulates which state a machine is in
+     * and which character it is reading in on the input tape. 
+     * 
      * @class Condition
      * @memberof Machine
      * @constructor
      * @param {Object} attribs The initialization literal.
+     * @param {Machine.State} attribs.state The state the machine is in.
+     * @param {String} character The character the machine is reading.
      *
      **/
     Machine.Condition = function(attribs) {
@@ -29,12 +33,20 @@
         },
 
         // Public Methods
-        /** @method **/
+        /**
+         * Retrieves the condition state. 
+         * @method
+         * @return {Machine.State} The condition state.
+         */
         getState: function() {
             return this.state;
         },
 
-        /** @method **/
+        /**
+         * Sets the condition state.
+         * @method
+         * @param {Machine.State} state The condition sate.
+         */
         setState: function(state){
             if(state instanceof Machine.State == false){
                 throw new  Error("attribs.state not of type Machine.State"); 
@@ -43,12 +55,20 @@
             this.state = state; 
         }, 
 
-        /** @method **/
+        /**
+         * Retrieves the condition character.
+         * @method
+         * @return {String} The condition character.
+         */ 
         getCharacter: function() {
             return this.character;
         },
 
-        /** @method **/
+        /**
+         * Sets the condition character.
+         * @method
+         * @param {String} character The condition character.
+         */
         setCharacter: function(character){
             this.character = character; 
         }

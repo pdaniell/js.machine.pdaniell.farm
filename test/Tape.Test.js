@@ -29,4 +29,21 @@ describe("Tape Test Suite", function() {
 
 
 
+
+    it("Default Alphabet Tape Constructor", function() {
+
+
+        var alphabet = Machine.Alphabet.TALLY_NOTATION;
+
+        var tape = new Machine.Tape({
+            chars: "abcde"
+        });
+
+        expect(tape.getAlphabet()).toBe(Machine.Alphabet.UNRESTRICTED)
+
+
+    });
+
+
+
 });

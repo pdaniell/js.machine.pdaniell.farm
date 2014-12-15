@@ -1,11 +1,16 @@
 (function() {
 
     /**
-     *
+     * A class to represent a transition function, which maps objects of
+     * the class {@link Machine.Condition} to objects of the class {@link}
+     * 
+     * 
      * @class TransitionFunction
      * @memberof Machine
      * @constructor
      * @param {Object} attribs The initialization literal.
+     * @param {Machine.StateTable} [attribs.stateTable] Start with an already initialized state table. 
+     * @params {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet for the transition function.
      *
      **/
     Machine.TransitionFunction = function(attribs) {
@@ -16,20 +21,33 @@
     Machine.TransitionFunction.prototype = {
         // Private Methods
         _init: function(attribs) {
+            
+            //this is where we will ulimately map conditions to commands
             this.map = new Machine.HashTable();
-            this.stateTable = attribs.stateTable;
-            this.alphabet = attribs.alphabet;
 
-            if (attribs.hasOwnProperty("requireTotal")) {
-                this.requireTotal = attribs.requireTotal;
+            if(attribs.hasOwnProperty("stateTable")){
+                this.stateTable = attribs.stateTable;
             } else {
-                this.requireTotal = false; 
+                this.stateTable = new Machine.StateTable(); 
             }
+
+            if(attribs.hasOwnProperty("alphabet")){
+                this.alphabet = attribs.alphabet; 
+            } else {
+                this.stateTable = new Machine.Alphabet.UNRESTRICTED;
+            }
+
+
         },
 
 
         // Public Methods
-        /** @method **/
+        /**
+         * Adds a transition to the function using two objects. 
+         *         
+         * @param {Machine.Condition} condition The condition for the mapping.
+         * @param {Machine.Command} command   The command for the mapping.
+         */
         add: function(condition, command) {
 
             if (condition instanceof Machine.Condition == false) {
@@ -67,13 +85,22 @@
 
         },
 
-        /** @method **/
+        /**
+         * Removes a transition from the mapping by its domain element.
+         * @method
+         * @param  {Machine.Condition} condition The condition to remove
+         */
         removeTransitionByCondition: function(condition) {
             this.map.remove(JSON.stringify(condition));
         },
 
 
-        /** @method **/
+        /**
+         * Get the command for this condition.
+         * @method 
+         * @param  {Machine.Condition} condition  The conditions
+         * @return {Machine.command}           The command
+         */
         getCommand: function(condition) {
             if (this.map.containsKey(JSON.stringify(condition)) == false && this.requireTotal == true) {
                 throw "Missing transition condition.";
@@ -82,18 +109,30 @@
             return this.map.get(JSON.stringify(condition));
         },
 
-        /** @method **/
+        /**
+         * Retrieves the alphabet for this transition function.
+         * @method
+         * @return {Machine.Alphabet} The alphabet.
+         */
         getAlphabet: function() {
             return this.alphabet;
         },
 
 
-        /** @method **/
+        /**
+         * Retrieves the state table for the transition function.
+         * @method
+         * @return {Machine.StateTable} The state table.
+         */
         getStateTable: function() {
             return this.stateTable;
         },
 
-        /** @method **/
+        /**
+         * Retrieves the list of the conditions mapped by the transition function.  I.e. this retrieves the domain of the function.
+         * @method
+         * @return {Array} An array of {@link Machine.Condition} objects.
+         */
         getConditions: function() {
             var list = this.map.keys();
             var toReturn = [];
@@ -121,18 +160,33 @@
 
         },
 
-        /** @method **/
+        /**
+         * Sets the alphabet for this transition function. 
+         * Be  cautious using this function as it provides no internal validation for consistency. 
+         * 
+         * @method
+         * @param {Machine.Alphabet} alphabet The alphabet
+         */
         setAlphabet: function(alphabet) {
             this.alphabet = alphabet;
         },
 
-        /** @method **/
+        /**
+         * Sets the state table for the transition function. 
+         * Be cautious using this fuction as it provides no interna validation for consistency.
+         * @param {Machine.StateTable} stateTable The state table
+         */
         setStateTable: function(stateTable) {
             this.stateTable = stateTable;
         },
 
 
-        /** @method **/
+        /**
+         * A useful method which returns the state of the transition function as a human
+         * readable string.
+         * @method
+         * @return {String} The string summary. 
+         */
         getTransitionDescriptions: function() {
             var descriptions = [];
 
