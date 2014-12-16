@@ -11,10 +11,10 @@
      * @constructor
      * @memberof Machine
      * @param {Object} attribs A configuration object
-     * @param {Mmachine.Alphabet} [attribs.alphabet={@link Machine.Alphabet}] [description]    
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.    
      **/
     Machine.DFA = function(attribs) {
-        this._init(attributes);
+        this._init(attribs);
     };
 
 
@@ -40,15 +40,13 @@
 
             // The indicator that the DFA has processed its last cell of 
             // input and it is in an accepting state
-            this.accepted = false; 
-
-
+            this.isAccepted = false; 
 
             // The indicator that either the DFA has processed the last
             // cell of its input and it is in a control (i.e. non-accepting state)
             // or the DFA had remaining input for which there was no suitable
             // transition condition. 
-            this.halted = false; 
+            this.isHalted = false; 
 
 
             // Now iniitialize the tape. 
@@ -56,6 +54,14 @@
                 alphabet: this.getAlphabet(), 
                 chars: ""
             });
+
+            // There is only one pointer on a DFA tape
+            // We initialize it here at posiiton 0
+            this.pointerPosition = 0; 
+
+            // Step counter: we haven't done anything yet so set 
+            // the step count to 0
+            this.stepCounter = 0; 
 
             // Now we initialize the Transition Function. 
             this.transitionFunction = new Machine.TransitionFunction({
@@ -78,23 +84,81 @@
 
         //Public Methods
 
-        /** @method **/
+        /**
+         * Retrieves the alphabet for this DFA. 
+         * @method
+         * @return {Machine.Alphabet} The alphabet
+         */
         getAlphabet: function() {
             return this.alphabet;
         },
 
-        /** @method **/
+        /**
+         * Sets the alphabet for the DFA.Beware: there are no internal 
+         * consistency checks for replacing a state table in situ. 
+         * 
+         * @method
+         * @param {Machine.Alphabet} alphabet The alphabet.
+         */
         setAlphabet: function(alphabet) {
             this.alphabet = alphabet;
         },
 
 
-        /** @method **/
-        addState: function(state) {
-            this.stateTable.add(state);
+        /**
+         * Adds a state to the machine using primitives.  
+         * @method  
+         * @param {String}  stateLabel  The name of the state
+         * @param {Boolean} isAccepting Whether of not the state is an accepting state.
+         */
+        addStateByLabel: function(stateLabel, isAccepting) {
+            var state = new Machine.State({label:stateLabel, isAccepting:isAccepting}); 
+            this.addState(state); 
         },
 
-        /** @method **/
+
+        /**
+         * Adds a non-accepting (control) state to the machine using primitives. 
+         * @method
+         * @param {String}  stateLabel  The name of the state
+         */
+        addControlStateByLabel: function(stateLabel) {
+            var state = new Machine.State({label:stateLabel, isAccepting:false}); 
+            this.addState(state); 
+        },
+
+
+        /**
+         * Adds a state using a state object.
+         * @method
+         * @param {Machine.State}  state  The state object
+         */
+        addState: function(state) {
+            this.stateTable.add(state);
+            this.onAddState.call(state); 
+        },
+
+
+        /**
+         * Remove state by label. 
+         * @method
+         * @param {String} stateLabel The name for the label
+         */
+        removeStateByLabel:function(stateLabel) { 
+
+            var state = this.stateTable.getStateByLabel(stateLabel); 
+            // - ---------------TODO ------------------------------
+            //  We have to remove the state but also associate transitions
+            //
+            this.onRemoveState.call(state); 
+        }, 
+
+        
+
+        /**
+         * [setInitialState description]
+         * @param {Machine.State} initialState [description]
+         */
         setInitialState: function(initialState) {
             if (this.stateTable.contains(state) == false) {
                 throw new Error("Initial State is not in State Table");

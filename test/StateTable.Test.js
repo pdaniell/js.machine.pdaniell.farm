@@ -11,9 +11,9 @@ describe("StateTable Test Suite", function() {
 
         expect(stateTable.length()).toBe(0); 
         expect(stateTable.contains(controlState)).toBe(false); 
-        expect(stateTable.getStateFromLabel(null)).toBe(false); 
+        expect(stateTable.getStateByLabel(null)).toBe(false); 
         expect(stateTable.contains(null)).toBe(false); 
-        expect(stateTable.contains(stateTable.getStateFromLabel("A"))).toBe(false); 
+        expect(stateTable.contains(stateTable.getStateByLabel("A"))).toBe(false); 
          
 
 
@@ -22,11 +22,11 @@ describe("StateTable Test Suite", function() {
             .toBe(1); 
 
 
-        expect(stateTable.contains(stateTable.getStateFromLabel("A"))).toBe(true); 
+        expect(stateTable.contains(stateTable.getStateByLabel("A"))).toBe(true); 
         
         stateTable.remove("A"); 
 
-        expect(stateTable.contains(stateTable.getStateFromLabel("A"))).toBe(false); 
+        expect(stateTable.contains(stateTable.getStateByLabel("A"))).toBe(false); 
 
 
         expect(stateTable.length())

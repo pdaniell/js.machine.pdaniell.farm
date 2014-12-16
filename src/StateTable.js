@@ -52,7 +52,7 @@
          * @param  {String} label The label of the state
          */
         remove: function(label) {
-            var state = this.getStateFromLabel(label);
+            var state = this.getStateByLabel(label);
             this.stateMap.remove(label);
             if (this.acceptingStates.contains(state)) {
                 this.acceptingStates.remove(state);
@@ -90,7 +90,7 @@
          * @param  {String} label A name for the state
          * @return {Machine.State}       The state object
          */
-        getStateFromLabel: function(label) {
+        getStateByLabel: function(label) {
             if (label == null) return false;
             return this.stateMap.get(label);
         },
