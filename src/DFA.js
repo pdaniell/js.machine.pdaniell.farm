@@ -4,22 +4,22 @@
      *
      * This class represents a Deterministic Finite  Automaton (DFA). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Deterministic_finite_automaton}
-     * and also suggestions for fruther reading.
+     * and also suggestions for further reading.
      *
-     * @class FSA Finite State Automaton
+     *
+     * @class DFA
      * @constructor
      * @memberof Machine
-     * @param {Object} attribs A configuration
-     * 
-    
+     * @param {Object} attribs A configuration object
+     * @param {Mmachine.Alphabet} [attribs.alphabet={@link Machine.Alphabet}] [description]    
      **/
-    Machine.FSA = function(attribs) {
+    Machine.DFA = function(attribs) {
         this._init(attributes);
     };
 
 
 
-    Machine.FSA.prototype = {
+    Machine.DFA.prototype = {
 
         // Private Methods
         _init: function(attribs) {
@@ -29,26 +29,51 @@
                 this.setAlphabet(Machiine.Alphabet.UNRESTRICTED);
             }
 
-            // create an empty state table
-            // we'll add to it later
+            // Create an empty state table
+            // We'll add to it later
             this.stateTable = new Machine.StateTable();
 
+
+            // The current state of te machine. Since the state table
+            // is empty this has to be null
             this.currentState = null; 
-            this.is = false; 
-            this.hasHalted = false; 
 
-            this.inputString = "";
-            this.inputIndex = 0;
+            // The indicator that the DFA has processed its last cell of 
+            // input and it is in an accepting state
+            this.accepted = false; 
 
+
+
+            // The indicator that either the DFA has processed the last
+            // cell of its input and it is in a control (i.e. non-accepting state)
+            // or the DFA had remaining input for which there was no suitable
+            // transition condition. 
+            this.halted = false; 
+
+
+            // Now iniitialize the tape. 
             this.tape = new Machine.Tape({
-                alphabet: attribs.alphabet,
+                alphabet: this.getAlphabet(), 
                 chars: ""
             });
 
+            // Now we initialize the Transition Function. 
             this.transitionFunction = new Machine.TransitionFunction({
-                alphabet: this.alphabet,
-                stateTable: this.stateTable
+                alphabet: this.getAlphabet(),
+                stateTable: this.getStateTable()
             });
+
+
+            // Here we add some event listeners objects
+            this.onAddState = function(state){};  
+            this.onRemoveState = function(state){}; 
+            this.onAddTransition = function(condition, command){}; 
+            this.onRemoveTransition = function(condition, command){}; 
+            this.onStep = function(condition, command, stepCount, indexPointer){};
+            this.onHalt = function(state, stepCount, indexPointer){}; 
+            this.onAccept = function(state, stepCount, indexPointer){}; 
+            this.onReject = function(state, stepCount, indexPointer){}; 
+
         },
 
         //Public Methods
