@@ -77,11 +77,12 @@
             this.onAddState = function(state){};  
             this.onRemoveState = function(state){}; 
             this.onAddTransition = function(condition, command){}; 
-            this.onRemoveTransition = function(condition, command){}; 
+            this.onRemoveTransition = function(condition){}; 
             this.onStep = function(condition, command, stepCount, indexPointer){};
             this.onHalt = function(state, stepCount, indexPointer){}; 
             this.onAccept = function(state, stepCount, indexPointer){}; 
-            this.onReject = function(state, stepCount, indexPointer){}; 
+            this.onReject = function(state, stepCount, indexPointer){};
+            this.onPointerChange = function(position){};  
 
         },
 
@@ -279,6 +280,7 @@
           */
          setPointerPosition: function(pointerPosition){
             this.pointerPosition = pointerPosition; 
+            this.onPointerChange.call(this.pointerPosition);
          },
 
          /**
@@ -312,7 +314,10 @@
 
 
          /** 
-          * Sets the tape object.
+          * Sets the tape object. Beware when using this 
+          * method, there are no checks of internal consistency
+          * with other aspects of the DFA. 
+          * 
           * @method
           * @param {Machine.Tape} tape The tape
           */
@@ -320,16 +325,19 @@
             this.tape = tape; 
          }, 
 
+         /**
+          * Sets the input string on the tape for the DFA and
+          * sends the pointer back to the beginning of th string.
+          * 
+          * @method
+          * @param {String} input The input string
+          * 
+          */
+         setInputString: function(input) { 
+                this.getTape().setChars(input);
+                this.setPointerPosition(0); 
 
-        // initialState
-        // currentState
-        // isAccepted
-        // isHalted
-        // tape
-        // pointerPosition
-        // stepCounter
-
-
+         },
 
 
         /**
@@ -383,16 +391,27 @@
         
 
 
-        /** @method **/
+        /** 
+         * Resets the current state to the initial state (i.e. start state)
+         * and resets the tape position to 0.
+         * @method
+         */
         reset: function() {
-            this.currentState = this.getInitialState();
-            this.inputIndex = 0;
+            this.setCurrentState(this.getInitialState());
+            this.setPointerPosition(0);
+            this.setStepCount(0);
         },
 
 
 
-        /** @method **/
-        addTransition: function(currentState, currentCharacter, transitionState){
+        /** 
+         * Adds a transition.
+         * @method
+         * @param {Mahine.State} conditionState The condition state.
+         * @param {String} conditionCharacter The condition character.
+         * @param {Machine.State} transitionState  The state to transition to.
+         */
+        addTransition: function(condiitonState, currentCharacter, transitionState){
             var condition = new Machine.Condition({
                 state: currentState,
                 character:currentCharacter
@@ -400,12 +419,66 @@
 
             var command = new Machine.Command({state:transitionState});
             this.transitionFunction.add(condition, command);
+            this.onAddTransition.call(condition,command); 
+        }, 
+
+        /** 
+         * Adds a transition by state label.
+         * @method
+         * @param {String} conditionStateLabel The condition state label.
+         * @param {String} conditionCharacter The condition character.
+         * @param {String} transitionStateLabel  The state label to transition to.
+         */
+        addTransitionByLabel: function(conditonStateLabel, currentCharacter, transitionStateLabel){
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
+            var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
+            this.addTransition(conditionState, currentCharacter, transitionState); 
+        }, 
+
+        /**
+         * Removes a transition. 
+         * @method 
+         * @param {Machine.Condition} [varname] [description]
+         * 
+         */
+        removeTransition:function(condition){
+            this.getTransitionFunction.removeTransitionByCondition(condition); 
+            this.onRemoveTransition.call(condiiton); 
+        },
+
+        /**
+         * Removes a transition by label and character
+         * @method 
+         * @param {String} conditionStateLabel The condition state label
+         * @param {String} conditionCharacter The condition character
+         */
+        removeTransitionByLabel: function(conditionStateLabel, conditionCharacter){ 
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
+            var condition = new Machine.Condition({statea:condiitonState, 
+                character:conditionCharacter}); 
+            this.removeTrandition(condition);
         }, 
 
 
-        /** @method **/ 
+
+
+
+        /** 
+         * Executes one step of the DFA. 
+         * @method
+         */
         step: function() { 
-            var currentCharacter = this.getCurrentCharacter(); 
+            if(this.getIsHalted() == true)  {
+                //The DFA is halted so there is nothing do so, so return. 
+                return true; 
+
+            }
+
+            //Increment the stepCount
+            this.setStepCount(this.getStepCount + 1); 
+
+
+            var currentCharacter = this.charAt(this.getPointerPosition());  
             var currentState = this.getCurrenState(); 
 
         }
