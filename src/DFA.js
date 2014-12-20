@@ -400,6 +400,8 @@
             this.setCurrentState(this.getInitialState());
             this.setPointerPosition(0);
             this.setStepCount(0);
+            this.setIsAccepted(false); 
+            this.setIsHalted(false); 
         },
 
 
@@ -466,6 +468,7 @@
         /** 
          * Executes one step of the DFA. 
          * @method
+         * @return {Boolean} True if halted
          */
         step: function() { 
             if(this.getIsHalted() == true)  {
@@ -474,15 +477,83 @@
 
             }
 
-            //Increment the stepCount
-            this.setStepCount(this.getStepCount + 1); 
+            // Increment the stepCount
+            this.setStepCount(this.getStepCount() + 1); 
+            var currentState = this.getCurrenState(); 
+
+            if(this.getPointerPosition() >= this.getTape().length()){
+                
+                this.setIsHalted(true); 
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if(currentState.getIsAccepting() == true){
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState,this.getStepCount(), this.getPointerPosition());
+                } else {
+                    this.setIsAccepted(false); 
+                    this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
+
+                }
+
+                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
+                return true; 
+            }
 
 
             var currentCharacter = this.charAt(this.getPointerPosition());  
-            var currentState = this.getCurrenState(); 
 
+
+            var condition = new Machine.Condition (
+                {
+                    state: currentState, 
+                    character: currentCharacter
+                }); 
+
+            var command = this.getTransitionFunction().getCommand(condition); 
+
+            if(command == null){ 
+                // There was no transition for the appropriate condition
+                // so we have to halt and reject.
+                this.setIsHalted(true); 
+                this.setIsAccepted(false); 
+                this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
+                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
+                return true; 
+            }
+
+
+            // Now we come to the nondegenerate case
+
+            // Increment the pointer position 
+            this.setPointerPosition(this.getPointerPosition() + 1); 
+
+            // Change the state
+            this.setCurrentState(command.getState()); 
+
+            // Fire the event
+            this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
+
+            return false; 
+
+        }, 
+
+
+        /**
+         * Runs the DFA with a specified maximum number of steps.
+         * @method
+         * @param {Number} maxSteps The maximum number of steps to execute
+         * @returns {Boolean} True if the machine has halted
+         */
+        run: function(maxSteps){ 
+            for(var i=0; i < maxSteps; i++){
+                var returned = this.step(); 
+                if(returned == true){
+                    return true;                    
+                }
+            }
+
+            return false; 
         }
-
 
 
 

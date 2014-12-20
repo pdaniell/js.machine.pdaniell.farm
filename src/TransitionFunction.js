@@ -37,6 +37,13 @@
                 this.stateTable = new Machine.Alphabet.UNRESTRICTED;
             }
 
+            if(attribs.hasOwnProperty("requireTotal")){
+                this.requireTotal = attribs.requireTotal; 
+            } else {
+                this.requireTotal = false; 
+            }
+
+
 
         },
 
@@ -117,6 +124,32 @@
         getAlphabet: function() {
             return this.alphabet;
         },
+
+        /**
+         * Retrieves the require total property. If this property
+         * is true, the {@link Machine.TransitionFunction.getCommand} function
+         * throws an error if it is missing a condition key. OTherwise, it returns 
+         * null on a key miss.
+         * @method 
+         * @return {Boolean} True if the function is required to be total.
+         */
+        getRequireTotal: function() { 
+            return this.requireTotal; 
+        }, 
+
+
+        /**
+         * Sets the require total property. If this property
+         * is true, the {@link Machine.TransitionFunction.getCommand} function
+         * throws an error if it is missing a condition key. OTherwise, it returns 
+         * null on a key miss.
+         * @method 
+         * @param {Boolean} requireTotal The require total property
+         */
+        setRequireTotal: function(requireTotal) { 
+            this.requireTotal = requireTotal;
+        }, 
+
 
 
         /**

@@ -1,8 +1,10 @@
-describe("Finite State Automaton Test", function() {
+describe("Deterministic Finite Automaton Test", function() {
 
 
-    it("FSA Constructor Test", function() {
+    it("DFA Basic Usage Test", function() {
 
+
+        var dfa = new Machine.DFA(); 
 
 
         
