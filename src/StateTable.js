@@ -132,23 +132,34 @@
          * @method
          * @return {String} The string summary. 
          */
-        characterDisplay: function() {
+        characterDisplay: function(label) {
             var s = "";
 
-            s = s + "|| Control: ";
+            s = s + Machine.ANSI.embolden("Control: ");
 
-            for (var controlKey in this.controlStates.keys()) {
-                s = s + controlKey + " | ";
+            for (var i  = 0; i < this.controlStates.values().length; i++) {
+                s = s + this.controlStates.values()[i].getLabel() 
+                if(label == this.controlStates.values()[i].getLabel()) { 
+                    s = s + "*"; 
+                }
+                s = s +  " | ";
             }
 
-            s = s + "\n || Accepting: ";
+            s = s + Machine.ANSI.embolden("Accepting: ");
 
 
-            for (var acceptKey in this.acceptingStates.keys()) {
-                s = s + acceptKey + " | ";
+
+            for (var i  = 0; i < this.acceptingStates.values().length; i++) {
+                s = s + this.acceptingStates.values()[i].getLabel() 
+                if(label == this.acceptingStates.values()[i].getLabel()) { 
+                    s = s + "*"; 
+                }
+                s = s + " | ";
             }
 
-            s = s + "\n ";
+            s = s + "\n";
+
+            return s; 
 
         }
 

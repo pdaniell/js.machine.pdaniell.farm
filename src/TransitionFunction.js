@@ -25,19 +25,19 @@
             //this is where we will ulimately map conditions to commands
             this.map = new Machine.HashTable();
 
-            if(attribs.hasOwnProperty("stateTable")){
+            if(attribs && attribs.hasOwnProperty("stateTable")){
                 this.stateTable = attribs.stateTable;
             } else {
                 this.stateTable = new Machine.StateTable(); 
             }
 
-            if(attribs.hasOwnProperty("alphabet")){
+            if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.alphabet = attribs.alphabet; 
             } else {
                 this.stateTable = new Machine.Alphabet.UNRESTRICTED;
             }
 
-            if(attribs.hasOwnProperty("requireTotal")){
+            if(attribs && attribs.hasOwnProperty("requireTotal")){
                 this.requireTotal = attribs.requireTotal; 
             } else {
                 this.requireTotal = false; 
@@ -171,18 +171,14 @@
             var toReturn = [];
             for (var i = 0; i < list.length; i++) {
 
-                var obj = $.parseJSON(list[i]);
-                var state = new State({
+
+                var obj = JSON.parse(list[i]);
+                var state = new Machine.State({
                     label: obj.state.label,
                     isAccepting: obj.state.isAccepting,
-                    x: obj.state.x,
-                    y: obj.state.y,
-                    w: obj.state.w,
-                    h: obj.state.h,
-                    isVisible: obj.state.isVisible
                 });
 
-                var condition = new Condition({
+                var condition = new Machine.Condition({
                     state: state,
                     character: obj.character
                 });
@@ -231,7 +227,36 @@
             });
             return descriptions;
 
+        }, 
+
+        /**
+         * A useful method which returns the transition function as a human
+         * readable string.
+         * @method
+         * @return {String} The string summary. 
+         */
+        characterDisplay: function(highlightCondition) {
+            var s = ""; 
+            var conditions = this.getConditions(); 
+            for(var i = 0; i < conditions.length; i++){ 
+                var condition = conditions[i]; 
+                var command = this.getCommand(condition); 
+                if (condition.getState().getLabel() == highlightCondition.getState().getLabel() &&
+                    condition.getCharacter() == highlightCondition.getCharacter())
+                 { 
+                    s += Machine.ANSI.invert("(" + condition.getState().getLabel() + ","
+                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"); 
+                } else {
+                    s += "(" + condition.getState().getLabel() + ","
+                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"; 
+                }
+
+            }
+
+            return s + "\n"; 
+
         }
+
     };
 
 

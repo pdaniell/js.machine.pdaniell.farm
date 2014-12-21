@@ -27,10 +27,11 @@
  *
  **/
 
+var Machine = {}; 
 
 (function() {
 
-    var Machine = {
+    Machine = {
         version: '0.0.1',
         author: 'Paul Daniell'
     };
@@ -652,6 +653,118 @@
 
 (function() {
 
+    /**
+     * A utility class with static color codes. 
+     * 
+     * @class ANSI
+     * @memberof Machine
+     *
+     **/
+    Machine.ANSI = function() {};
+
+
+    /** @static */
+    Machine.ANSI.ANSI_RESET = "\u001B[0m";
+
+    /** @static */
+    Machine.ANSI.ANSI_BLACK = "\u001B[30m";
+
+
+    /** @static */
+    Machine.ANSI.ANSI_LIGHT_GRAY= "\u001B[37m";
+
+    /** @static */
+    Machine.ANSI.ANSI_DARK_GRAY= "\u001B[90m";
+
+    
+    /** @static */
+    Machine.ANSI.ANSI_RED = "\u001B[31m";
+
+    /** @static */
+    Machine.ANSI.ANSI_GREEN = "\u001B[32m";
+
+    /** @static */
+    Machine.ANSI.ANSI_YELLOW = "\u001B[33m";
+
+    /** @static */
+    Machine.ANSI.ANSI_BLUE = "\u001B[34m";
+
+    /** @static */
+    Machine.ANSI.ANSI_PURPLE = "\u001B[35m";
+
+    /** @static */
+    Machine.ANSI.ANSI_CYAN = "\u001B[36m";
+
+    /** @static */
+    Machine.ANSI.ANSI_WHITE = "\u001B[37m";
+
+    /** @static  */
+    Machine.ANSI.ANSI_BOLD = "\u001B[1m"; 
+
+    /** @static  */
+    Machine.ANSI.ANSI_BOLD_RESET = "\u001B[21m"; 
+
+    
+    Machine.ANSI.ANSI_INVERT = "\u001B[7m"; 
+
+    /** @static  */
+    Machine.ANSI.ANSI_INVERT_RESET = "\u001B[27m"; 
+
+    
+
+
+
+    Machine.ANSI.colorize = function(input, color) { 
+
+        var s = "" + color; 
+        s  = s + input; 
+        s  = s + Machine.ANSI.ANSI_RESET;
+        return s; 
+    }; 
+
+    Machine.ANSI.embolden = function(input) { 
+        return Machine.ANSI.ANSI_BOLD + 
+                input + 
+                Machine.ANSI.ANSI_BOLD_RESET; 
+
+    }
+
+     Machine.ANSI.invert = function(input) { 
+        return Machine.ANSI.ANSI_INVERT + 
+                input + 
+                Machine.ANSI.ANSI_INVERT_RESET; 
+
+    }
+
+})(); 
+
+
+
+
+(function() {
+
+    /**
+     * A utility class for manipulating strings.
+     *
+     * @class StringUtils
+     * @memberof Machine
+     *
+     **/
+    Machine.StringUtils = function() {};
+
+
+
+    Machine.StringUtils.border = function(length, color) {
+        var s = "";
+        for (var i = 0; i < length; i++) {
+            s += "*"
+        }
+        return Machine.ANSI.colorize(s + "\n", color);
+    };
+
+})();
+(function() {
+
 
     /**
      * An alphabet for a machine.
@@ -793,6 +906,8 @@
 
     };
 
+    Machine.Alphabet.EMPTY_STRING = ""; 
+
     /**
      * A binary notation with characters '0' and '1'. The blank character is '0'.
      * 
@@ -846,6 +961,12 @@
 
             this.state = attribs.state;
             this.character = attribs.character;
+
+            if(attribs.hasOwnProperty("stackElement")) { 
+                this.stackElement = attribs.stackElement; 
+            } else { 
+                this.stackElement = null; 
+            }
 
         },
 
@@ -1155,10 +1276,10 @@
 
         // Private Methods
         _init: function(attribs) {
-            if(attribs.hasOwnProperty("alphabet")){
+            if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.setAlphabet(attribs.alphabet);
             } else { 
-                this.setAlphabet(Machiine.Alphabet.UNRESTRICTED);
+                this.setAlphabet(Machine.Alphabet.UNRESTRICTED);
             }
 
             // Create an empty state table
@@ -1294,16 +1415,19 @@
         },
 
         /**
-         * Sets the initial state. 
+         * Sets the initial state. If the current state is set 
          * @method
          * @param {Machine.State} initialState The initial state.
          */
         setInitialState: function(initialState) {
-            if (this.stateTable.contains(state) == false) {
+            if (this.stateTable.contains(initialState) == false) {
                 throw new Error("Initial State is not in State Table");
             }
 
             this.initialState = initialState;
+            if(this.getCurrentState() == null) { 
+                this.setCurrentState(initialState); 
+            }
 
         },
 
@@ -1334,7 +1458,7 @@
          * @param {Machine.State} currentState The new current state.
          */
          setCurrentState: function(currentState){
-            if (this.stateTable.contains(state) == false) {
+            if (this.stateTable.contains(currentState) == false) {
                 throw new Error("Initial State is not in State Table");
             }
 
@@ -1545,9 +1669,9 @@
          * @param {String} conditionCharacter The condition character.
          * @param {Machine.State} transitionState  The state to transition to.
          */
-        addTransition: function(condiitonState, currentCharacter, transitionState){
+        addTransition: function(conditionState, currentCharacter, transitionState){
             var condition = new Machine.Condition({
-                state: currentState,
+                state: conditionState,
                 character:currentCharacter
             }); 
 
@@ -1563,7 +1687,7 @@
          * @param {String} conditionCharacter The condition character.
          * @param {String} transitionStateLabel  The state label to transition to.
          */
-        addTransitionByLabel: function(conditonStateLabel, currentCharacter, transitionStateLabel){
+        addTransitionByLabel: function(conditionStateLabel, currentCharacter, transitionStateLabel){
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
             this.addTransition(conditionState, currentCharacter, transitionState); 
@@ -1611,7 +1735,7 @@
 
             // Increment the stepCount
             this.setStepCount(this.getStepCount() + 1); 
-            var currentState = this.getCurrenState(); 
+            var currentState = this.getCurrentState(); 
 
             if(this.getPointerPosition() >= this.getTape().length()){
                 
@@ -1619,7 +1743,7 @@
                 // We have run out of characters to read
                 // Are we in an accepting state?
                 if(currentState.getIsAccepting() == true){
-                    this.setIsAccepted(true)
+                    this.setIsAccepted(true);
                     this.onAccept.call(currentState,this.getStepCount(), this.getPointerPosition());
                 } else {
                     this.setIsAccepted(false); 
@@ -1632,7 +1756,7 @@
             }
 
 
-            var currentCharacter = this.charAt(this.getPointerPosition());  
+            var currentCharacter = this.getTape().charAt(this.getPointerPosition());  
 
 
             var condition = new Machine.Condition (
@@ -1665,9 +1789,64 @@
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
 
+            return false; 
 
+        }, 
+
+
+        /**
+         * Runs the DFA with a specified maximum number of steps.
+         * @method
+         * @param {Number} maxSteps The maximum number of steps to execute
+         * @returns {Boolean} True if the machine has halted
+         */
+        run: function(maxSteps){ 
+            for(var i=0; i < maxSteps; i++){
+                var returned = this.step(); 
+                if(returned == true){
+                    return true;                    
+                }
+            }
+
+            return false; 
+        }, 
+
+
+        /**
+         * Creates a human readable string describing the DFA. 
+         * @method 
+         * @return {String} The human readable string.
+         */
+        characterDisplay: function() { 
+            var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
+
+            s = s + Machine.ANSI.colorize(this.getTape().characterDisplay(this.getPointerPosition()), 
+                Machine.ANSI.ANSI_YELLOW);
+
+            s = s + "\n";
+
+            s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()), 
+                Machine.ANSI.ANSI_BLUE);
+
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: "  
+                + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " 
+                + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
+          
+            var currentState = this.getCurrentState(); 
+            var character = this.getTape().charAt(this.getPointerPosition()); 
+            var condition = new Machine.Condition({state:currentState, character:character}); 
+
+            s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
+
+            s = s +Machine.StringUtils.border((this.getTape().length() * 5)+ 10, Machine.ANSI.ANSI_RED); 
+
+
+
+
+            return s; 
 
         }
+
 
 
 
@@ -1675,6 +1854,34 @@
     };
 
 
+
+})();
+(function() {
+
+    /**
+     * A class to represent a stack used in
+     *
+     * @class Stack
+     * @memberof Machine
+     * @constructor
+     * @param {Object} attribs The initialization literal.
+     * @param {Machine.Alphabet} [attribs.alphabet] The stack alphabet.
+     
+     *
+     **/
+    Machine.Stack = function(attribs) {
+        this._init(attribs);
+    };
+
+    Machine.Stack.prototype = {
+        // Private Methods
+        _init: function(attribs) {
+            this.data = []
+
+
+        },
+
+    };
 
 })();
 (function() {
@@ -1882,23 +2089,34 @@
          * @method
          * @return {String} The string summary. 
          */
-        characterDisplay: function() {
+        characterDisplay: function(label) {
             var s = "";
 
-            s = s + "|| Control: ";
+            s = s + Machine.ANSI.embolden("Control: ");
 
-            for (var controlKey in this.controlStates.keys()) {
-                s = s + controlKey + " | ";
+            for (var i  = 0; i < this.controlStates.values().length; i++) {
+                s = s + this.controlStates.values()[i].getLabel() 
+                if(label == this.controlStates.values()[i].getLabel()) { 
+                    s = s + "*"; 
+                }
+                s = s +  " | ";
             }
 
-            s = s + "\n || Accepting: ";
+            s = s + Machine.ANSI.embolden("Accepting: ");
 
 
-            for (var acceptKey in this.acceptingStates.keys()) {
-                s = s + acceptKey + " | ";
+
+            for (var i  = 0; i < this.acceptingStates.values().length; i++) {
+                s = s + this.acceptingStates.values()[i].getLabel() 
+                if(label == this.acceptingStates.values()[i].getLabel()) { 
+                    s = s + "*"; 
+                }
+                s = s + " | ";
             }
 
-            s = s + "\n ";
+            s = s + "\n";
+
+            return s; 
 
         }
 
@@ -1931,13 +2149,13 @@
 
         // Private Methods
         _init: function(attribs) {
-            if(attribs.hasOwnProperty("alphabet")){
+            if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.setAlphabet(attribs.alphabet); 
             } else{ 
                 this.setAlphabet(Machine.Alphabet.UNRESTRICTED);
             }
 
-            if(attribs.hasOwnProperty("chars")) {
+            if(attribs && attribs.hasOwnProperty("chars")) {
                 this.setChars(attribs.chars); 
             } else {
                 this.setChars(""); //set it to the empty string
@@ -2085,7 +2303,7 @@
          * @method
          * @return {String} The string summary. 
          */
-        characterDisplay: function() {
+        characterDisplay: function(pointerPosition) {
             var s = "";
 
             //header
@@ -2099,7 +2317,11 @@
             s += "|";
             for (var i = 0; i < this.chars.length; i++) {
                 var character = this.chars.charAt(i);
-                s = s + " " + character;
+                if(i == pointerPosition) { 
+                    s = s + Machine.ANSI.invert("*" + character);
+                } else {
+                    s = s + " " + character;
+                }
                 s = s + " |";
             }
 
@@ -2144,19 +2366,19 @@
             //this is where we will ulimately map conditions to commands
             this.map = new Machine.HashTable();
 
-            if(attribs.hasOwnProperty("stateTable")){
+            if(attribs && attribs.hasOwnProperty("stateTable")){
                 this.stateTable = attribs.stateTable;
             } else {
                 this.stateTable = new Machine.StateTable(); 
             }
 
-            if(attribs.hasOwnProperty("alphabet")){
+            if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.alphabet = attribs.alphabet; 
             } else {
                 this.stateTable = new Machine.Alphabet.UNRESTRICTED;
             }
 
-            if(attribs.hasOwnProperty("requireTotal")){
+            if(attribs && attribs.hasOwnProperty("requireTotal")){
                 this.requireTotal = attribs.requireTotal; 
             } else {
                 this.requireTotal = false; 
@@ -2290,18 +2512,14 @@
             var toReturn = [];
             for (var i = 0; i < list.length; i++) {
 
-                var obj = $.parseJSON(list[i]);
-                var state = new State({
+
+                var obj = JSON.parse(list[i]);
+                var state = new Machine.State({
                     label: obj.state.label,
                     isAccepting: obj.state.isAccepting,
-                    x: obj.state.x,
-                    y: obj.state.y,
-                    w: obj.state.w,
-                    h: obj.state.h,
-                    isVisible: obj.state.isVisible
                 });
 
-                var condition = new Condition({
+                var condition = new Machine.Condition({
                     state: state,
                     character: obj.character
                 });
@@ -2350,7 +2568,36 @@
             });
             return descriptions;
 
+        }, 
+
+        /**
+         * A useful method which returns the transition function as a human
+         * readable string.
+         * @method
+         * @return {String} The string summary. 
+         */
+        characterDisplay: function(highlightCondition) {
+            var s = ""; 
+            var conditions = this.getConditions(); 
+            for(var i = 0; i < conditions.length; i++){ 
+                var condition = conditions[i]; 
+                var command = this.getCommand(condition); 
+                if (condition.getState().getLabel() == highlightCondition.getState().getLabel() &&
+                    condition.getCharacter() == highlightCondition.getCharacter())
+                 { 
+                    s += Machine.ANSI.invert("(" + condition.getState().getLabel() + ","
+                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"); 
+                } else {
+                    s += "(" + condition.getState().getLabel() + ","
+                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"; 
+                }
+
+            }
+
+            return s + "\n"; 
+
         }
+
     };
 
 

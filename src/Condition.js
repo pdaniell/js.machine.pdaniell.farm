@@ -30,6 +30,12 @@
             this.state = attribs.state;
             this.character = attribs.character;
 
+            if(attribs.hasOwnProperty("stackElement")) { 
+                this.stackElement = attribs.stackElement; 
+            } else { 
+                this.stackElement = null; 
+            }
+
         },
 
         // Public Methods

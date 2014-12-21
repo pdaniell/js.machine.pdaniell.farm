@@ -23,10 +23,10 @@
 
         // Private Methods
         _init: function(attribs) {
-            if(attribs.hasOwnProperty("alphabet")){
+            if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.setAlphabet(attribs.alphabet);
             } else { 
-                this.setAlphabet(Machiine.Alphabet.UNRESTRICTED);
+                this.setAlphabet(Machine.Alphabet.UNRESTRICTED);
             }
 
             // Create an empty state table
@@ -162,16 +162,19 @@
         },
 
         /**
-         * Sets the initial state. 
+         * Sets the initial state. If the current state is set 
          * @method
          * @param {Machine.State} initialState The initial state.
          */
         setInitialState: function(initialState) {
-            if (this.stateTable.contains(state) == false) {
+            if (this.stateTable.contains(initialState) == false) {
                 throw new Error("Initial State is not in State Table");
             }
 
             this.initialState = initialState;
+            if(this.getCurrentState() == null) { 
+                this.setCurrentState(initialState); 
+            }
 
         },
 
@@ -202,7 +205,7 @@
          * @param {Machine.State} currentState The new current state.
          */
          setCurrentState: function(currentState){
-            if (this.stateTable.contains(state) == false) {
+            if (this.stateTable.contains(currentState) == false) {
                 throw new Error("Initial State is not in State Table");
             }
 
@@ -413,9 +416,9 @@
          * @param {String} conditionCharacter The condition character.
          * @param {Machine.State} transitionState  The state to transition to.
          */
-        addTransition: function(condiitonState, currentCharacter, transitionState){
+        addTransition: function(conditionState, currentCharacter, transitionState){
             var condition = new Machine.Condition({
-                state: currentState,
+                state: conditionState,
                 character:currentCharacter
             }); 
 
@@ -431,7 +434,7 @@
          * @param {String} conditionCharacter The condition character.
          * @param {String} transitionStateLabel  The state label to transition to.
          */
-        addTransitionByLabel: function(conditonStateLabel, currentCharacter, transitionStateLabel){
+        addTransitionByLabel: function(conditionStateLabel, currentCharacter, transitionStateLabel){
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
             this.addTransition(conditionState, currentCharacter, transitionState); 
@@ -479,7 +482,7 @@
 
             // Increment the stepCount
             this.setStepCount(this.getStepCount() + 1); 
-            var currentState = this.getCurrenState(); 
+            var currentState = this.getCurrentState(); 
 
             if(this.getPointerPosition() >= this.getTape().length()){
                 
@@ -500,7 +503,7 @@
             }
 
 
-            var currentCharacter = this.charAt(this.getPointerPosition());  
+            var currentCharacter = this.getTape().charAt(this.getPointerPosition());  
 
 
             var condition = new Machine.Condition (
@@ -553,6 +556,42 @@
             }
 
             return false; 
+        }, 
+
+
+        /**
+         * Creates a human readable string describing the DFA. 
+         * @method 
+         * @return {String} The human readable string.
+         */
+        characterDisplay: function() { 
+            var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
+
+            s = s + Machine.ANSI.colorize(this.getTape().characterDisplay(this.getPointerPosition()), 
+                Machine.ANSI.ANSI_YELLOW);
+
+            s = s + "\n";
+
+            s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()), 
+                Machine.ANSI.ANSI_BLUE);
+
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: "  
+                + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " 
+                + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
+          
+            var currentState = this.getCurrentState(); 
+            var character = this.getTape().charAt(this.getPointerPosition()); 
+            var condition = new Machine.Condition({state:currentState, character:character}); 
+
+            s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
+
+            s = s +Machine.StringUtils.border((this.getTape().length() * 5)+ 10, Machine.ANSI.ANSI_RED); 
+
+
+
+
+            return s; 
+
         }
 
 

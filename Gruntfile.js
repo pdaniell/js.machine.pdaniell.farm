@@ -15,12 +15,15 @@ module.exports = function(grunt) {
         //Utils 
         'src/utils/HashTable.js', 
         'src/utils/HashSet.js',
-
+        'src/utils/ANSI.js',
+        'src/utils//StringUtils.js', 
+        
         // Classes
         'src/Alphabet.js',
         'src/Condition.js',
         'src/Command.js',
         'src/DFA.js',
+        'src/Stack.js', 
         'src/State.js',
         'src/StateTable.js',
         'src/Tape.js',

@@ -27,10 +27,11 @@
  *
  **/
 
+var Machine = {}; 
 
 (function() {
 
-    var Machine = {
+    Machine = {
         version: '0.0.1',
         author: 'Paul Daniell'
     };

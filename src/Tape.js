@@ -21,13 +21,13 @@
 
         // Private Methods
         _init: function(attribs) {
-            if(attribs.hasOwnProperty("alphabet")){
+            if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.setAlphabet(attribs.alphabet); 
             } else{ 
                 this.setAlphabet(Machine.Alphabet.UNRESTRICTED);
             }
 
-            if(attribs.hasOwnProperty("chars")) {
+            if(attribs && attribs.hasOwnProperty("chars")) {
                 this.setChars(attribs.chars); 
             } else {
                 this.setChars(""); //set it to the empty string
@@ -175,7 +175,7 @@
          * @method
          * @return {String} The string summary. 
          */
-        characterDisplay: function() {
+        characterDisplay: function(pointerPosition) {
             var s = "";
 
             //header
@@ -189,7 +189,11 @@
             s += "|";
             for (var i = 0; i < this.chars.length; i++) {
                 var character = this.chars.charAt(i);
-                s = s + " " + character;
+                if(i == pointerPosition) { 
+                    s = s + Machine.ANSI.invert("*" + character);
+                } else {
+                    s = s + " " + character;
+                }
                 s = s + " |";
             }
 

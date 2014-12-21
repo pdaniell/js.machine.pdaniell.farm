@@ -141,6 +141,8 @@
 
     };
 
+    Machine.Alphabet.EMPTY_STRING = ""; 
+
     /**
      * A binary notation with characters '0' and '1'. The blank character is '0'.
      * 
