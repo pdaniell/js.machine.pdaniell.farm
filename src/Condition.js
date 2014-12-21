@@ -10,7 +10,7 @@
      * @constructor
      * @param {Object} attribs The initialization literal.
      * @param {Machine.State} attribs.state The state the machine is in.
-     * @param {String} character The character the machine is reading.
+     * @param {String} attribs.character The character the machine is reading.
      *
      **/
     Machine.Condition = function(attribs) {
@@ -39,6 +39,29 @@
         },
 
         // Public Methods
+        
+        /**
+         * Retrieves the stack element
+         * @method
+         * @return {String} The stack element
+         */
+        getStackElement: function() {
+            return this.state;
+        },
+
+        /**
+         * Sets the stack element
+         * @method
+         * @param {Machine.State} state The condition sate.
+         */
+        setStackElement: function(state){
+            if(state instanceof Machine.State == false){
+                throw new  Error("attribs.state not of type Machine.State"); 
+            }
+
+            this.state = state; 
+        }, 
+
         /**
          * Retrieves the condition state. 
          * @method

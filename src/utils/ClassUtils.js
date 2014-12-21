@@ -3,7 +3,7 @@
     /**
      * A utility class for classes and inheritance.
      *
-     * @class Class Utils
+     * @class ClassUtils
      * @memberof Machine
      *
      **/

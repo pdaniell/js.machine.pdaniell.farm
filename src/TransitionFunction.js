@@ -34,7 +34,7 @@
             if(attribs && attribs.hasOwnProperty("alphabet")){
                 this.alphabet = attribs.alphabet; 
             } else {
-                this.stateTable = new Machine.Alphabet.UNRESTRICTED;
+                this.alphabet = Machine.Alphabet.UNRESTRICTED;
             }
 
             if(attribs && attribs.hasOwnProperty("requireTotal")){
@@ -180,7 +180,8 @@
 
                 var condition = new Machine.Condition({
                     state: state,
-                    character: obj.character
+                    character: obj.character, 
+                    stackElement: obj.stackElement
                 });
                 toReturn[i] = condition;
             }

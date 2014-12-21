@@ -141,6 +141,13 @@
 
     };
 
+    /**
+     * A constant to represent the empty string character. 
+     *  
+     * @const 
+     * 
+     * @memberOf Machine.Alphabet
+     */
     Machine.Alphabet.EMPTY_STRING = ""; 
 
     /**
