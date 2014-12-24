@@ -14,8 +14,8 @@ describe("Deterministic Finite Automaton Test", function() {
         dfa.addStateByLabel("A", true);
         dfa.addStateByLabel("B", false);
 
-        dfa.addTransitionByLabel("A", "a", "B");
-        dfa.addTransitionByLabel("B", "b", "A");
+        dfa.addTransitionByStateLabelsAndCharacter("A", "a", "B");
+        dfa.addTransitionByStateLabelsAndCharacter("B", "b", "A");
 
         expect(dfa.getStateTable().length()).toBe(2); 
 

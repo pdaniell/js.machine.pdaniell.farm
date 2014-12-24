@@ -13,6 +13,7 @@ module.exports = function(grunt) {
 
 
         //Utils 
+        'src/utils/ClassUtils.js',
         'src/utils/HashTable.js', 
         'src/utils/HashSet.js',
         'src/utils/ANSI.js',
@@ -20,6 +21,7 @@ module.exports = function(grunt) {
         
         // Classes
         'src/Alphabet.js',
+        'src/BaseMachine.js',
         'src/Condition.js',
         'src/Command.js',
         'src/DFA.js',
