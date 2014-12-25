@@ -33,32 +33,52 @@
             }
 
 
+
+            if (attribs && attribs.hasOwnProperty("outputAlphabet")) {
+                this.setOutputAlphabet(attribs.outputAlphabet);
+            } else {
+                this.setOutputAlphabet(Machine.Alphabet.UNRESTRICTED);
+            }
+
+
             // The indicator that the FST has processed its last cell of 
             // input and it is in an accepting state
             this.isAccepted = false; 
 
 
-            // Now iniitialize the tape. 
-            this.tape = new Machine.Tape({
+            // Now iniitialize the input tape. 
+            this.inputTape = new Machine.Tape({
                 alphabet: this.getAlphabet(), 
                 chars: ""
             });
 
-            // There is only one pointer on a FST tape
-            // We initialize it here at posiiton 0
-            this.pointerPosition = 0; 
+            // Now initialize the output tape
+
+            this.outputTape = new Machine.Tape({
+                alphabet: this.getOutputAlphabet(), 
+                chars: ""
+            });
+
+            // There are two pointers for a FST
+            // We initialize ithe input pointer at posiiton 0
+            this.inputPointerPosition = 0; 
+
+            // And the output pointer
+            this.outputPointerPosition = 0; 
+
 
             //Some custom listener functions for FST class
             this.onAccept = function(state, stepCount, indexPointer){}; 
             this.onReject = function(state, stepCount, indexPointer){};
-            this.onPointerChange = function(position){};  
+            this.onInputPointerChange = function(position){};  
+            this.onOutputPointerChange = function(position){};  
 
         },
 
         //Public Methods
         
         /**
-         * Returns whether the DFA is in an accepting state. 
+         * Returns whether the FST is in an accepting state. 
          * @method 
          * @return {Boolean} True if in accepted state.
          */
@@ -68,7 +88,7 @@
 
 
          /**
-          * Sets the value of the accepted state of the DFA.
+          * Sets the value of the accepted state of the FST.
           * @method
           * @param {Boolean} isAccepted The new accepted state.
           * 
@@ -79,61 +99,120 @@
 
 
          /**
-          * Returns the tape pointer position. 
+          * Returns the input tape pointer position. 
           * @method 
           * @return {Number} The pointer position.
           * 
           */
-         getPointerPosition: function(){
-            return this.pointerPosition;
+         getInputPointerPosition: function(){
+            return this.inputPointerPosition;
          }, 
 
          /**
-          * Sets the pointer position. 
+          * Sets the input pointer position. 
+          * @method
+          * @param {Number} inputPointerPosition The pointer position.
+          */
+         setInputPointerPosition: function(inputPointerPosition){
+            this.inputPointerPosition = inputPointerPosition; 
+            this.onInputPointerChange.call(this.inputPointerPosition);
+         },
+
+         /**
+          * Returns the output tape pointer position. 
+          * @method 
+          * @return {Number} The pointer position.
+          * 
+          */
+         getOutputPointerPosition: function(){
+            return this.outputPointerPosition;
+         }, 
+
+         /**
+          * Sets the output pointer position. 
           * @method
           * @param {Number} pointerPosition The pointer position.
           */
-         setPointerPosition: function(pointerPosition){
-            this.pointerPosition = pointerPosition; 
-            this.onPointerChange.call(this.pointerPosition);
+         setOutputPointerPosition: function(outputPointerPosition){
+            this.outputPointerPosition = outputPointerPosition; 
+            this.onOutputPointerChange.call(this.outputPointerPosition);
          },
 
 
+
          /**
-          * Returns the tape object. 
+          * Returns the input tape object. 
           * @method
           * @return {Machine.Tape} The input tape.
           */
-         getTape: function() { 
-            return this.tape;
+         getInputTape: function() { 
+            return this.inputTape;
          }, 
 
 
          /** 
-          * Sets the tape object. Beware when using this 
+          * Sets the input tape object. Beware when using this 
           * method, there are no checks of internal consistency
-          * with other aspects of the DFA. 
+          * with other aspects of the FST. 
           * 
           * @method
-          * @param {Machine.Tape} tape The tape
+          * @param {Machine.Tape} inputTape The tape
           */
-         setTape: function(tape){
-            this.tape = tape; 
+         setInputTape: function(inputTape){
+            this.inputTape = inputTape; 
          }, 
 
          /**
-          * Sets the input string on the tape for the DFA and
-          * sends the pointer back to the beginning of th string.
+          * Returns the output tape object. 
+          * @method
+          * @return {Machine.Tape} The output tape.
+          */
+         getOutputTape: function() { 
+            return this.outputTape;
+         }, 
+
+
+         /** 
+          * Sets the output tape object. Beware when using this 
+          * method, there are no checks of internal consistency
+          * with other aspects of the FST. 
+          * 
+          * @method
+          * @param {Machine.Tape} outputTape The tape
+          */
+         setOutputTape: function(outputTape){
+            this.oputTape = outputTape; 
+         }, 
+
+         /**
+          * Sets the input string on the tape for the FST and
+          * sends the input pointer back to the beginning of the string.
           * 
           * @method
           * @param {String} input The input string
           * 
           */
          setInputString: function(input) { 
-                this.getTape().setChars(input);
-                this.setPointerPosition(0); 
+                this.getInputTape().setChars(input);
+                this.setInputPointerPosition(0); 
 
          },
+
+
+         /**
+          * Sets the output string on the tape for the FST and
+          * sends the output pointer back to the beginning of the string.
+          * 
+          * @method
+          * @param {String} output The output string
+          * 
+          */
+         setOutputString: function(output) { 
+                this.getOutputTape().setChars(output);
+                this.setInputPointerPosition(0); 
+
+         },
+
 
         /** 
          * Resets the current state to the initial state (i.e. start state)
@@ -142,7 +221,9 @@
          */
         reset: function() {
             Machine.BaseMachine.prototype.reset.call(this); 
-            this.setPointerPosition(0);
+            this.setInputPointerPosition(0);
+            this.setOutputString(""); 
+            this.setOutputPointerPosition(0); 
             this.setIsAccepted(false); 
         },
 

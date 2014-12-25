@@ -30,10 +30,6 @@ describe("Deterministic Finite Automaton Test", function() {
         expect(dfa.getIsHalted()).toBe(true);
         
 
-
-
-
-
     });
 
 

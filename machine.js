@@ -88,10 +88,14 @@ var Machine = {};
      */
     Machine.ClassUtils.extend = function(childClass, parentClass) {
         for (var key in parentClass.prototype) {
-            if (!(key in childClass.prototype)) {
-                childClass.prototype[key] = parentClass.prototype[key];
+            if(parentClass.prototype.hasOwnProperty(key)){
+                if (!(childClass.prototype.hasOwnProperty(key))) {
+                    childClass.prototype[key] = parentClass.prototype[key];
+                }
             }
         }
+
+        childClass.__super__ = parentClass.prototype;
 
     };
 

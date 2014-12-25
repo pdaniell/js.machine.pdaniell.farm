@@ -73,7 +73,8 @@
         //Public Methods
 
         /**
-         * Retrieves the alphabet for this DFA. 
+         * Retrieves the alphabet for this machine. Typically, this alphabet 
+         * is for the input language.
          * @method
          * @return {Machine.Alphabet} The alphabet
          */
@@ -82,7 +83,9 @@
         },
 
         /**
-         * Sets the alphabet for the DFA.Beware: there are no internal 
+         * Sets the alphabet for the machine. Typically, this alphabet is
+         * for the input language.
+         * Beware: there are no internal 
          * consistency checks for replacing a state table in situ. 
          * 
          * @method
@@ -209,7 +212,7 @@
 
 
         /**
-         * Returns whether the DFA is in a halting state. 
+         * Returns whether the machine is in a halting state. 
          * @method 
          * @return {Boolean} True if in halted state.
          */
@@ -219,7 +222,7 @@
 
 
          /**
-          * Sets the value of the halted state of the DFA.
+          * Sets the value of the halted state of the machine.
           * @method
           * @param {Boolean} isHalted The new halted state.
           * 
