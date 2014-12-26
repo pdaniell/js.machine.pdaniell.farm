@@ -27,4 +27,13 @@
         return Machine.ANSI.colorize(s + "\n", color);
     };
 
+
+    /**
+     *
+     *
+     *
+     */
+    Machine.StringUtils.replaceAt = function(str, index, character) {
+        return str.substr(0, index) + character + str.substr(index + character.length);
+    }
 })();

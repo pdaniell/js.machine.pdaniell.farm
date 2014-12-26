@@ -166,7 +166,7 @@
                 throw new Error("Invalid length.");
             }
 
-            this.chars = StringUtils.replaceCharAt(this.chars, pos, c);
+            this.chars = Machine.StringUtils.replaceAt(this.chars, pos, c);
         },
 
         /**

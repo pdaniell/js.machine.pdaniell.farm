@@ -46,21 +46,35 @@
          * @return {String} The stack element
          */
         getStackElement: function() {
-            return this.state;
+            return this.stackElement;
         },
 
         /**
          * Sets the stack element
          * @method
-         * @param {Machine.State} state The condition sate.
+         * @param {String} stackElement The stack element
          */
-        setStackElement: function(state){
+        setStackElement: function(stackElement){
             if(state instanceof Machine.State == false){
                 throw new  Error("attribs.state not of type Machine.State"); 
             }
 
-            this.state = state; 
+            this.stackElement = stackElement; 
         }, 
+
+        /**
+         * Returns whether the condition has a stack element. 
+         * @method
+         * @returns {Boolean} True if the condition has a stack element. 
+         */
+        hasStackElement: function(){
+            if(this.stackElement == null){
+                return false; 
+            }
+
+            return true; 
+
+        },
 
         /**
          * Retrieves the condition state. 
@@ -74,7 +88,7 @@
         /**
          * Sets the condition state.
          * @method
-         * @param {Machine.State} state The condition sate.
+         * @param {Machine.State} state The condition state.
          */
         setState: function(state){
             if(state instanceof Machine.State == false){
@@ -100,6 +114,28 @@
          */
         setCharacter: function(character){
             this.character = character; 
+        }, 
+
+        /**
+         * Returns a human readable string of the condition.
+         * @method
+         * @returns {String} The human readable string.
+         */
+        characterDisplay: function(){
+
+            var ch = ""; 
+            if(this.getCharacter() == Machine.Alphabet.EPSILON_STRING){
+                ch = "ε"
+            } else { 
+                ch = this.getCharacter(); 
+            }
+
+            if(this.hasStackElement()){
+                return this.getState().getLabel() + "," + ch + "," + this.getStackElement(); 
+            } else { 
+                 return this.getState().getLabel() + "," + ch; 
+            }
+
         }
 
     };

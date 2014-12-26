@@ -56,7 +56,7 @@
          * Returns the command state.
          * @method
          * @return {Machine.State} The state to go to after the command has been executed.
-         */     
+         */
         getState: function() {
             return this.state;
         },
@@ -75,33 +75,33 @@
         },
 
         /**
-         * Checks whether this command has an action. 
+         * Checks whether this command has an action.
          * @method
          * @return {Boolean} True if the command has an action.
          */
-        hasAction: function() { 
-            if(this.action == null){
-                return false; 
+        hasAction: function() {
+            if (this.action == null) {
+                return false;
             }
-            return true; 
-        }, 
+            return true;
+        },
 
         /**
          * Retrieves the action of the command.
          * @method
-         * @return {Object} The command action or null. 
+         * @return {Object} The command action or null.
          */
         getAction: function() {
             return this.action;
         },
 
         /**
-         * Sets the action of the command. 
+         * Sets the action of the command.
          * @method
          * @param {Object} action The command action.
          */
         setAction: function(action) {
-            if(Machine.Command.isValidAction(action) == true) { 
+            if (Machine.Command.isValidAction(action) == true) {
                 this.action = action;
             }
         },
@@ -110,9 +110,9 @@
          * Removes the command action.
          * @method
          */
-        removeAction: function() { 
-            this.action = null; 
-        }, 
+        removeAction: function() {
+            this.action = null;
+        },
 
         /**
          * Checks whether this command has an action argument.
@@ -120,10 +120,10 @@
          * @return {Boolean} True if argument is present.
          */
         hasArgument: function() {
-            if(this.argument == null){
-                return false; 
+            if (this.argument == null) {
+                return false;
             }
-            return true; 
+            return true;
         },
 
         /**
@@ -136,20 +136,53 @@
         },
 
         /**
-         * Sets the action argument. 
+         * Sets the action argument.
          * @method
          * @param {String} argument The argument, a character usualy.
          */
         setArgument: function(argument) {
             this.argument = argument;
-        }, 
+        },
 
         /**
          * Removes the action argument.
          * @method
          */
-        removeArgument: function(){
-            this.argument = null; 
+        removeArgument: function() {
+            this.argument = null;
+        },
+
+        /**
+         * Returns a human readable string representing the command.
+         * @method
+         * @returns {String} The human readable string.
+         */
+        characterDisplay: function() {
+            if (this.hasAction() == true && this.hasArgument() == true) {
+
+                var ch = "";
+                if (this.getArgument() == Machine.Alphabet.EPSILON_STRING) {
+                    ch = "ε"
+                } else {
+                    ch = this.getArgument();
+                }
+
+                return this.getState().getLabel() + "," +
+                 Machine.Command.getActionCode(this.getAction()) + "," + ch;
+
+            } else if (this.hasAction() == true && this.hasArgument() == false) {
+                
+                return this.getState().getLabel() + "," + 
+                Machine.Command.getActionCode(this.getAction());
+
+            } else if (this.hasAction() == false && this.hasArgument() == false) {
+                
+                return this.getState().getLabel();
+
+            } else {
+                throw new Error("Invalid commmand: argument with unspecified action.");
+
+            }
         }
 
     };
@@ -161,6 +194,7 @@
         /** 
          * The machine action to move right on a tape.
          * @constant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
          */
@@ -171,6 +205,7 @@
         /**
          * The machine action to move left on a tape.
          * @constant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
          */
@@ -181,17 +216,19 @@
         /**
          * The machine action to erase the current cell on the tape.
          * @costant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
-         */ 
+         */
         Machine.Command.ERASE = "3";
 
     var WRITE =
 
         /**
-         * The machine action to write a character to the cell on the tape. 
+         * The machine action to write a character to the cell on the tape.
          * (Usually requires an argument.)
          * @constant
+         * @static
          * @type {Object}
          * @memberOf Machine.Command
          */
@@ -203,6 +240,7 @@
         /**
          * The machine action to do nothing
          * @constant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
          */
@@ -210,25 +248,44 @@
 
 
     /**
-     * The hashset whih contains all the official machine actions. 
+     * The hashset whih contains all the official machine actions.
      * @constant
-     * @type {Machine.HashSet}
+     * @static
+     * @type {Machine.HashTable}
      * @memberOf  Machine.Command
      */
-    Machine.Command.ActionSet = new Machine.HashSet();
-    Machine.Command.ActionSet.add(Machine.Command.MOVE_RIGHT);
-    Machine.Command.ActionSet.add(Machine.Command.MOVE_LEFT);
-    Machine.Command.ActionSet.add(Machine.Command.ERASE);
-    Machine.Command.ActionSet.add(Machine.Command.WRITE);
-    Machine.Command.ActionSet.add(Machine.Command.NOOP);
+    Machine.Command.ACTION_SET = new Machine.HashTable();
+    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_RIGHT, "Ri");
+    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_LEFT, "Le");
+    Machine.Command.ACTION_SET.put(Machine.Command.ERASE, "Er");
+    Machine.Command.ACTION_SET.put(Machine.Command.WRITE, "Wr");
+    Machine.Command.ACTION_SET.put(Machine.Command.NOOP, "Np");
 
     /** 
      * A static method which assesses whether an object is a valid action.
-     * @method 
+     * @method
+     * @static
      *  @memberof Machine.Command
      **/
     Machine.Command.isValidAction = function(command) {
-        return Machine.Command.CommandSet.contains(command);
+        return Machine.Command.ACTION_SET.containsKey(command);
+    };
+
+
+    /**
+     * A statuc netgid which returns a short description code for a
+     * machine action.
+     * @method
+     * @static
+     * @memberOf  Machine.Command
+     */
+    Machine.Command.getActionCode = function(command) {
+        if (Machine.Command.isValidAction(command) == false) {
+            throw new Error("Invalid action");
+        }
+
+        return Machine.Command.ACTION_SET.get(command);
+
     };
 
 

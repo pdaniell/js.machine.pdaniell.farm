@@ -33,7 +33,6 @@
             }
 
 
-
             if (attribs && attribs.hasOwnProperty("outputAlphabet")) {
                 this.setOutputAlphabet(attribs.outputAlphabet);
             } else {
@@ -76,6 +75,27 @@
         },
 
         //Public Methods
+
+        /**
+         * Retrieves the output alphabet for this machine. 
+         * @method
+         * @return {Machine.Alphabet} The output alphabet
+         */
+        getOutputAlphabet: function() {
+            return this.outputAlphabet;
+        },
+
+        /**
+         * Sets the output alphabet for the machine. 
+         * 
+         * @method
+         * @param {Machine.Alphabet} outputAlphabet The output alphabet.
+         */
+        setOutputAlphabet: function(outputAlphabet) {
+            this.outputAlphabet = outputAlphabet;
+        },
+
+
         
         /**
          * Returns whether the FST is in an accepting state. 
@@ -181,7 +201,7 @@
           * @param {Machine.Tape} outputTape The tape
           */
          setOutputTape: function(outputTape){
-            this.oputTape = outputTape; 
+            this.outputTape = outputTape; 
          }, 
 
          /**
@@ -296,7 +316,7 @@
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getInputPointerPosition() >= this.getTape().length()){
+            if(this.getInputPointerPosition() >= this.getInputTape().length()){
                 
                 this.setIsHalted(true); 
                 // We have run out of characters to read
@@ -315,7 +335,7 @@
             }
 
 
-            var currentCharacter = this.getTape().charAt(this.getInputPointerPosition());  
+            var currentCharacter = this.getInputTape().charAt(this.getInputPointerPosition());  
 
 
             var condition = new Machine.Condition (
@@ -345,7 +365,7 @@
             // Because this is a finite state transducer, we assume that 
             // the action is Machine.Command.WRITE
             if(command.getArgument() != Machine.Alphabet.EPSILON_STRING){
-                this.getOutputTape().alter(this.getOutputPointerPosition(), command.getArgument);
+                this.getOutputTape().alter(this.getOutputPointerPosition(), command.getArgument());
                 this.setOutputPointerPosition(this.getOutputPointerPosition() + 1);
 
 
@@ -386,7 +406,7 @@
          * @return {String} The human readable string.
          */
         characterDisplay: function() { 
-            var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
+            var s = Machine.StringUtils.border((this.getInputTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
 
             s = s + Machine.ANSI.colorize(this.getInputTape().characterDisplay(this.getInputPointerPosition()), 
                 Machine.ANSI.ANSI_YELLOW);
@@ -411,7 +431,7 @@
 
             s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
 
-            s = s +Machine.StringUtils.border((this.getTape().length() * 5)+ 10, Machine.ANSI.ANSI_RED); 
+            s = s +Machine.StringUtils.border((this.getInputTape().length() * 5)+ 10, Machine.ANSI.ANSI_RED); 
 
 
 

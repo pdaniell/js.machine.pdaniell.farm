@@ -245,11 +245,9 @@
                 if (condition.getState().getLabel() == highlightCondition.getState().getLabel() &&
                     condition.getCharacter() == highlightCondition.getCharacter())
                  { 
-                    s += Machine.ANSI.invert("(" + condition.getState().getLabel() + ","
-                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"); 
+                    s += Machine.ANSI.invert("(" + condition.characterDisplay() + ":"  + command.characterDisplay() + ")"); 
                 } else {
-                    s += "(" + condition.getState().getLabel() + ","
-                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"; 
+                    s += "(" + condition.characterDisplay()  + ":"  + command.characterDisplay()  + ")"; 
                 }
 
             }

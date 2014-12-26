@@ -805,6 +805,15 @@ var Machine = {};
         return Machine.ANSI.colorize(s + "\n", color);
     };
 
+
+    /**
+     *
+     *
+     *
+     */
+    Machine.StringUtils.replaceAt = function(str, index, character) {
+        return str.substr(0, index) + character + str.substr(index + character.length);
+    }
 })();
 (function() {
 
@@ -1055,7 +1064,8 @@ var Machine = {};
         //Public Methods
 
         /**
-         * Retrieves the alphabet for this DFA. 
+         * Retrieves the alphabet for this machine. Typically, this alphabet 
+         * is for the input language.
          * @method
          * @return {Machine.Alphabet} The alphabet
          */
@@ -1064,7 +1074,9 @@ var Machine = {};
         },
 
         /**
-         * Sets the alphabet for the DFA.Beware: there are no internal 
+         * Sets the alphabet for the machine. Typically, this alphabet is
+         * for the input language.
+         * Beware: there are no internal 
          * consistency checks for replacing a state table in situ. 
          * 
          * @method
@@ -1191,7 +1203,7 @@ var Machine = {};
 
 
         /**
-         * Returns whether the DFA is in a halting state. 
+         * Returns whether the machine is in a halting state. 
          * @method 
          * @return {Boolean} True if in halted state.
          */
@@ -1201,7 +1213,7 @@ var Machine = {};
 
 
          /**
-          * Sets the value of the halted state of the DFA.
+          * Sets the value of the halted state of the machine.
           * @method
           * @param {Boolean} isHalted The new halted state.
           * 
@@ -1369,21 +1381,35 @@ var Machine = {};
          * @return {String} The stack element
          */
         getStackElement: function() {
-            return this.state;
+            return this.stackElement;
         },
 
         /**
          * Sets the stack element
          * @method
-         * @param {Machine.State} state The condition sate.
+         * @param {String} stackElement The stack element
          */
-        setStackElement: function(state){
+        setStackElement: function(stackElement){
             if(state instanceof Machine.State == false){
                 throw new  Error("attribs.state not of type Machine.State"); 
             }
 
-            this.state = state; 
+            this.stackElement = stackElement; 
         }, 
+
+        /**
+         * Returns whether the condition has a stack element. 
+         * @method
+         * @returns {Boolean} True if the condition has a stack element. 
+         */
+        hasStackElement: function(){
+            if(this.stackElement == null){
+                return false; 
+            }
+
+            return true; 
+
+        },
 
         /**
          * Retrieves the condition state. 
@@ -1397,7 +1423,7 @@ var Machine = {};
         /**
          * Sets the condition state.
          * @method
-         * @param {Machine.State} state The condition sate.
+         * @param {Machine.State} state The condition state.
          */
         setState: function(state){
             if(state instanceof Machine.State == false){
@@ -1423,6 +1449,28 @@ var Machine = {};
          */
         setCharacter: function(character){
             this.character = character; 
+        }, 
+
+        /**
+         * Returns a human readable string of the condition.
+         * @method
+         * @returns {String} The human readable string.
+         */
+        characterDisplay: function(){
+
+            var ch = ""; 
+            if(this.getCharacter() == Machine.Alphabet.EPSILON_STRING){
+                ch = "ε"
+            } else { 
+                ch = this.getCharacter(); 
+            }
+
+            if(this.hasStackElement()){
+                return this.getState().getLabel() + "," + ch + "," + this.getStackElement(); 
+            } else { 
+                 return this.getState().getLabel() + "," + ch; 
+            }
+
         }
 
     };
@@ -1488,7 +1536,7 @@ var Machine = {};
          * Returns the command state.
          * @method
          * @return {Machine.State} The state to go to after the command has been executed.
-         */     
+         */
         getState: function() {
             return this.state;
         },
@@ -1507,33 +1555,33 @@ var Machine = {};
         },
 
         /**
-         * Checks whether this command has an action. 
+         * Checks whether this command has an action.
          * @method
          * @return {Boolean} True if the command has an action.
          */
-        hasAction: function() { 
-            if(this.action == null){
-                return false; 
+        hasAction: function() {
+            if (this.action == null) {
+                return false;
             }
-            return true; 
-        }, 
+            return true;
+        },
 
         /**
          * Retrieves the action of the command.
          * @method
-         * @return {Object} The command action or null. 
+         * @return {Object} The command action or null.
          */
         getAction: function() {
             return this.action;
         },
 
         /**
-         * Sets the action of the command. 
+         * Sets the action of the command.
          * @method
          * @param {Object} action The command action.
          */
         setAction: function(action) {
-            if(Machine.Command.isValidAction(action) == true) { 
+            if (Machine.Command.isValidAction(action) == true) {
                 this.action = action;
             }
         },
@@ -1542,9 +1590,9 @@ var Machine = {};
          * Removes the command action.
          * @method
          */
-        removeAction: function() { 
-            this.action = null; 
-        }, 
+        removeAction: function() {
+            this.action = null;
+        },
 
         /**
          * Checks whether this command has an action argument.
@@ -1552,10 +1600,10 @@ var Machine = {};
          * @return {Boolean} True if argument is present.
          */
         hasArgument: function() {
-            if(this.argument == null){
-                return false; 
+            if (this.argument == null) {
+                return false;
             }
-            return true; 
+            return true;
         },
 
         /**
@@ -1568,20 +1616,53 @@ var Machine = {};
         },
 
         /**
-         * Sets the action argument. 
+         * Sets the action argument.
          * @method
          * @param {String} argument The argument, a character usualy.
          */
         setArgument: function(argument) {
             this.argument = argument;
-        }, 
+        },
 
         /**
          * Removes the action argument.
          * @method
          */
-        removeArgument: function(){
-            this.argument = null; 
+        removeArgument: function() {
+            this.argument = null;
+        },
+
+        /**
+         * Returns a human readable string representing the command.
+         * @method
+         * @returns {String} The human readable string.
+         */
+        characterDisplay: function() {
+            if (this.hasAction() == true && this.hasArgument() == true) {
+
+                var ch = "";
+                if (this.getArgument() == Machine.Alphabet.EPSILON_STRING) {
+                    ch = "ε"
+                } else {
+                    ch = this.getArgument();
+                }
+
+                return this.getState().getLabel() + "," +
+                 Machine.Command.getActionCode(this.getAction()) + "," + ch;
+
+            } else if (this.hasAction() == true && this.hasArgument() == false) {
+                
+                return this.getState().getLabel() + "," + 
+                Machine.Command.getActionCode(this.getAction());
+
+            } else if (this.hasAction() == false && this.hasArgument() == false) {
+                
+                return this.getState().getLabel();
+
+            } else {
+                throw new Error("Invalid commmand: argument with unspecified action.");
+
+            }
         }
 
     };
@@ -1593,6 +1674,7 @@ var Machine = {};
         /** 
          * The machine action to move right on a tape.
          * @constant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
          */
@@ -1603,6 +1685,7 @@ var Machine = {};
         /**
          * The machine action to move left on a tape.
          * @constant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
          */
@@ -1613,17 +1696,19 @@ var Machine = {};
         /**
          * The machine action to erase the current cell on the tape.
          * @costant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
-         */ 
+         */
         Machine.Command.ERASE = "3";
 
     var WRITE =
 
         /**
-         * The machine action to write a character to the cell on the tape. 
+         * The machine action to write a character to the cell on the tape.
          * (Usually requires an argument.)
          * @constant
+         * @static
          * @type {Object}
          * @memberOf Machine.Command
          */
@@ -1635,6 +1720,7 @@ var Machine = {};
         /**
          * The machine action to do nothing
          * @constant
+         * @static
          * @type {Object}
          * @memberOf  Machine.Command
          */
@@ -1642,25 +1728,44 @@ var Machine = {};
 
 
     /**
-     * The hashset whih contains all the official machine actions. 
+     * The hashset whih contains all the official machine actions.
      * @constant
-     * @type {Machine.HashSet}
+     * @static
+     * @type {Machine.HashTable}
      * @memberOf  Machine.Command
      */
-    Machine.Command.ActionSet = new Machine.HashSet();
-    Machine.Command.ActionSet.add(Machine.Command.MOVE_RIGHT);
-    Machine.Command.ActionSet.add(Machine.Command.MOVE_LEFT);
-    Machine.Command.ActionSet.add(Machine.Command.ERASE);
-    Machine.Command.ActionSet.add(Machine.Command.WRITE);
-    Machine.Command.ActionSet.add(Machine.Command.NOOP);
+    Machine.Command.ACTION_SET = new Machine.HashTable();
+    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_RIGHT, "Ri");
+    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_LEFT, "Le");
+    Machine.Command.ACTION_SET.put(Machine.Command.ERASE, "Er");
+    Machine.Command.ACTION_SET.put(Machine.Command.WRITE, "Wr");
+    Machine.Command.ACTION_SET.put(Machine.Command.NOOP, "Np");
 
     /** 
      * A static method which assesses whether an object is a valid action.
-     * @method 
+     * @method
+     * @static
      *  @memberof Machine.Command
      **/
     Machine.Command.isValidAction = function(command) {
-        return Machine.Command.CommandSet.contains(command);
+        return Machine.Command.ACTION_SET.containsKey(command);
+    };
+
+
+    /**
+     * A statuc netgid which returns a short description code for a
+     * machine action.
+     * @method
+     * @static
+     * @memberOf  Machine.Command
+     */
+    Machine.Command.getActionCode = function(command) {
+        if (Machine.Command.isValidAction(command) == false) {
+            throw new Error("Invalid action");
+        }
+
+        return Machine.Command.ACTION_SET.get(command);
+
     };
 
 
@@ -1996,6 +2101,459 @@ var Machine = {};
     };
 
     Machine.ClassUtils.extend(Machine.DFA, Machine.BaseMachine); 
+
+
+
+})();
+(function() {
+
+    /**
+     *
+     * This class represents a Finite STate Transducer(FST)). For more information
+     * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Finite_state_transducer}
+     * and also suggestions for further reading.
+     *
+     *
+     * @class FST
+     * @constructor
+     * @memberof Machine
+     * @augments {Machine.BaseMachine}
+     * @param {Object} attribs A configuration object
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
+     * @param {Machine.Alphabet} [attribs.outputAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The output alphabet.
+     **/
+    Machine.FST = function(attribs) {
+        this._init(attribs);
+    };
+
+
+
+    Machine.FST.prototype = {
+
+        // Private Methods
+        _init: function(attribs) {
+
+            if(attribs){
+                Machine.BaseMachine.prototype._init.call(this, attribs); 
+            } else {
+                Machine.BaseMachine.prototype._init.call(this); 
+            }
+
+
+            if (attribs && attribs.hasOwnProperty("outputAlphabet")) {
+                this.setOutputAlphabet(attribs.outputAlphabet);
+            } else {
+                this.setOutputAlphabet(Machine.Alphabet.UNRESTRICTED);
+            }
+
+
+            // The indicator that the FST has processed its last cell of 
+            // input and it is in an accepting state
+            this.isAccepted = false; 
+
+
+            // Now iniitialize the input tape. 
+            this.inputTape = new Machine.Tape({
+                alphabet: this.getAlphabet(), 
+                chars: ""
+            });
+
+            // Now initialize the output tape
+
+            this.outputTape = new Machine.Tape({
+                alphabet: this.getOutputAlphabet(), 
+                chars: ""
+            });
+
+            // There are two pointers for a FST
+            // We initialize ithe input pointer at posiiton 0
+            this.inputPointerPosition = 0; 
+
+            // And the output pointer
+            this.outputPointerPosition = 0; 
+
+
+            //Some custom listener functions for FST class
+            this.onAccept = function(state, stepCount, indexPointer){}; 
+            this.onReject = function(state, stepCount, indexPointer){};
+            this.onInputPointerChange = function(position){};  
+            this.onOutputPointerChange = function(position){};  
+
+        },
+
+        //Public Methods
+
+        /**
+         * Retrieves the output alphabet for this machine. 
+         * @method
+         * @return {Machine.Alphabet} The output alphabet
+         */
+        getOutputAlphabet: function() {
+            return this.outputAlphabet;
+        },
+
+        /**
+         * Sets the output alphabet for the machine. 
+         * 
+         * @method
+         * @param {Machine.Alphabet} outputAlphabet The output alphabet.
+         */
+        setOutputAlphabet: function(outputAlphabet) {
+            this.outputAlphabet = outputAlphabet;
+        },
+
+
+        
+        /**
+         * Returns whether the FST is in an accepting state. 
+         * @method 
+         * @return {Boolean} True if in accepted state.
+         */
+         getIsAccepted: function()  {
+            return this.isAccepted; 
+         }, 
+
+
+         /**
+          * Sets the value of the accepted state of the FST.
+          * @method
+          * @param {Boolean} isAccepted The new accepted state.
+          * 
+          */
+         setIsAccepted: function(isAccepted){
+            this.isAccepted = isAccepted;
+         },
+
+
+         /**
+          * Returns the input tape pointer position. 
+          * @method 
+          * @return {Number} The pointer position.
+          * 
+          */
+         getInputPointerPosition: function(){
+            return this.inputPointerPosition;
+         }, 
+
+         /**
+          * Sets the input pointer position. 
+          * @method
+          * @param {Number} inputPointerPosition The pointer position.
+          */
+         setInputPointerPosition: function(inputPointerPosition){
+            this.inputPointerPosition = inputPointerPosition; 
+            this.onInputPointerChange.call(this.inputPointerPosition);
+         },
+
+         /**
+          * Returns the output tape pointer position. 
+          * @method 
+          * @return {Number} The pointer position.
+          * 
+          */
+         getOutputPointerPosition: function(){
+            return this.outputPointerPosition;
+         }, 
+
+         /**
+          * Sets the output pointer position. 
+          * @method
+          * @param {Number} pointerPosition The pointer position.
+          */
+         setOutputPointerPosition: function(outputPointerPosition){
+            this.outputPointerPosition = outputPointerPosition; 
+            this.onOutputPointerChange.call(this.outputPointerPosition);
+         },
+
+
+
+         /**
+          * Returns the input tape object. 
+          * @method
+          * @return {Machine.Tape} The input tape.
+          */
+         getInputTape: function() { 
+            return this.inputTape;
+         }, 
+
+
+         /** 
+          * Sets the input tape object. Beware when using this 
+          * method, there are no checks of internal consistency
+          * with other aspects of the FST. 
+          * 
+          * @method
+          * @param {Machine.Tape} inputTape The tape
+          */
+         setInputTape: function(inputTape){
+            this.inputTape = inputTape; 
+         }, 
+
+         /**
+          * Returns the output tape object. 
+          * @method
+          * @return {Machine.Tape} The output tape.
+          */
+         getOutputTape: function() { 
+            return this.outputTape;
+         }, 
+
+
+         /** 
+          * Sets the output tape object. Beware when using this 
+          * method, there are no checks of internal consistency
+          * with other aspects of the FST. 
+          * 
+          * @method
+          * @param {Machine.Tape} outputTape The tape
+          */
+         setOutputTape: function(outputTape){
+            this.outputTape = outputTape; 
+         }, 
+
+         /**
+          * Sets the input string on the tape for the FST and
+          * sends the input pointer back to the beginning of the string.
+          * 
+          * @method
+          * @param {String} input The input string
+          * 
+          */
+         setInputString: function(input) { 
+                this.getInputTape().setChars(input);
+                this.setInputPointerPosition(0); 
+
+         },
+
+
+         /**
+          * Sets the output string on the tape for the FST and
+          * sends the output pointer back to the beginning of the string.
+          * 
+          * @method
+          * @param {String} output The output string
+          * 
+          */
+         setOutputString: function(output) { 
+                this.getOutputTape().setChars(output);
+                this.setInputPointerPosition(0); 
+
+         },
+
+
+        /** 
+         * Resets the current state to the initial state (i.e. start state)
+         * and resets the tape position to 0.
+         * @method
+         */
+        reset: function() {
+            Machine.BaseMachine.prototype.reset.call(this); 
+            this.setInputPointerPosition(0);
+            this.setOutputString(""); 
+            this.setOutputPointerPosition(0); 
+            this.setIsAccepted(false); 
+        },
+
+
+
+
+        /** 
+         * Adds a transition.
+         * @method
+         * @param {Mahine.State} conditionState The condition state.
+         * @param {String} conditionCharacter The condition character.
+         * @param {Machine.State} transitionState  The state to transition to.
+         * @param {String} outputCharacter The output character.
+         */
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState, outputCharacter){
+            var condition = new Machine.Condition({
+                state: conditionState,
+                character:currentCharacter
+            }); 
+
+            var command = new Machine.Command({state:transitionState, action: Machine.Command.WRITE, argument:outputCharacter});
+            this.addTransition(condition,command); 
+        }, 
+
+        /** 
+         * Adds a transition by state label.
+         * @method
+         * @param {String} conditionStateLabel The condition state label.
+         * @param {String} conditionCharacter The condition character.
+         * @param {String} transitionStateLabel  The state label to transition to.
+         * @param {String} outputCharacter The output character.
+         */
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, transitionStateLabel, outputCharacter){
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
+            var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, transitionState, outputCharacter); 
+        }, 
+
+
+        /**
+         * Removes a transition by label and character
+         * @method 
+         * @param {String} conditionStateLabel The condition state label
+         * @param {String} conditionCharacter The condition character
+         */
+        removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter){ 
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
+            var condition = new Machine.Condition({statea:condiitonState, 
+                character:conditionCharacter}); 
+            this.removeTrandition(condition);
+        }, 
+
+
+
+
+
+        /** 
+         * Executes one step of the DFA. 
+         * @method
+         * @return {Boolean} True if halted
+         */
+        step: function() { 
+            if(this.getIsHalted() == true)  {
+                //The DFA is halted so there is nothing do so, so return. 
+                return true; 
+
+            }
+
+            // Increment the stepCount
+            this.setStepCount(this.getStepCount() + 1); 
+            var currentState = this.getCurrentState(); 
+
+            if(this.getInputPointerPosition() >= this.getInputTape().length()){
+                
+                this.setIsHalted(true); 
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if(currentState.getIsAccepting() == true){
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                } else {
+                    this.setIsAccepted(false); 
+                    this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+
+                }
+
+                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                return true; 
+            }
+
+
+            var currentCharacter = this.getInputTape().charAt(this.getInputPointerPosition());  
+
+
+            var condition = new Machine.Condition (
+                {
+                    state: currentState, 
+                    character: currentCharacter
+                }); 
+
+            var command = this.getTransitionFunction().getCommand(condition); 
+
+            if(command == null){ 
+                // There was no transition for the appropriate condition
+                // so we have to halt and reject.
+                this.setIsHalted(true); 
+                this.setIsAccepted(false); 
+                this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                return true; 
+            }
+
+
+            // Now we come to the nondegenerate case
+
+            // Increment the pointer position 
+            this.setInputPointerPosition(this.getInputPointerPosition() + 1); 
+
+            // Because this is a finite state transducer, we assume that 
+            // the action is Machine.Command.WRITE
+            if(command.getArgument() != Machine.Alphabet.EPSILON_STRING){
+                this.getOutputTape().alter(this.getOutputPointerPosition(), command.getArgument());
+                this.setOutputPointerPosition(this.getOutputPointerPosition() + 1);
+
+
+            }
+
+            // Change the state
+            this.setCurrentState(command.getState()); 
+
+            // Fire the event
+            this.onStep.call(condition, command, this.getStepCount(), this.getInputPointerPosition());
+
+            return false; 
+
+        }, 
+
+
+        /**
+         * Runs the DFA with a specified maximum number of steps.
+         * @method
+         * @param {Number} maxSteps The maximum number of steps to execute
+         * @returns {Boolean} True if the machine has halted
+         */
+        run: function(maxSteps){ 
+            for(var i=0; i < maxSteps; i++){
+                var returned = this.step(); 
+                if(returned == true){
+                    return true;                    
+                }
+            }
+
+            return false; 
+        }, 
+
+
+        /**
+         * Creates a human readable string describing the DFA. 
+         * @method 
+         * @return {String} The human readable string.
+         */
+        characterDisplay: function() { 
+            var s = Machine.StringUtils.border((this.getInputTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
+
+            s = s + Machine.ANSI.colorize(this.getInputTape().characterDisplay(this.getInputPointerPosition()), 
+                Machine.ANSI.ANSI_YELLOW);
+
+            s = s + "\n";
+
+            s = s + Machine.ANSI.colorize(this.getOutputTape().characterDisplay(this.getOutputPointerPosition()), 
+                Machine.ANSI.ANSI_YELLOW);
+
+            s = s + "\n";            
+
+            s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()), 
+                Machine.ANSI.ANSI_BLUE);
+
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: "  
+                + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " 
+                + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
+          
+            var currentState = this.getCurrentState(); 
+            var character = this.getInputTape().charAt(this.getInputPointerPosition()); 
+            var condition = new Machine.Condition({state:currentState, character:character}); 
+
+            s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
+
+            s = s +Machine.StringUtils.border((this.getInputTape().length() * 5)+ 10, Machine.ANSI.ANSI_RED); 
+
+
+
+
+            return s; 
+
+        }
+
+
+
+
+
+    };
+
+    Machine.ClassUtils.extend(Machine.FST, Machine.BaseMachine); 
 
 
 
@@ -2544,7 +3102,7 @@ var Machine = {};
                 throw new Error("Invalid length.");
             }
 
-            this.chars = StringUtils.replaceCharAt(this.chars, pos, c);
+            this.chars = Machine.StringUtils.replaceAt(this.chars, pos, c);
         },
 
         /**
@@ -2836,11 +3394,9 @@ var Machine = {};
                 if (condition.getState().getLabel() == highlightCondition.getState().getLabel() &&
                     condition.getCharacter() == highlightCondition.getCharacter())
                  { 
-                    s += Machine.ANSI.invert("(" + condition.getState().getLabel() + ","
-                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"); 
+                    s += Machine.ANSI.invert("(" + condition.characterDisplay() + ":"  + command.characterDisplay() + ")"); 
                 } else {
-                    s += "(" + condition.getState().getLabel() + ","
-                        + condition.getCharacter() + ":"  + command.getState().getLabel() + ")"; 
+                    s += "(" + condition.characterDisplay()  + ":"  + command.characterDisplay()  + ")"; 
                 }
 
             }

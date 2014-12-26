@@ -25,6 +25,7 @@ module.exports = function(grunt) {
         'src/Condition.js',
         'src/Command.js',
         'src/DFA.js',
+        'src/FST.js', 
         'src/Stack.js', 
         'src/State.js',
         'src/StateTable.js',
