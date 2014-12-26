@@ -236,14 +236,15 @@
          * @param {Mahine.State} conditionState The condition state.
          * @param {String} conditionCharacter The condition character.
          * @param {Machine.State} transitionState  The state to transition to.
+         * @param {String} outputCharacter The output character.
          */
-        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState){
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState, outputCharacter){
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter
             }); 
 
-            var command = new Machine.Command({state:transitionState});
+            var command = new Machine.Command({state:transitionState, action: Machine.Command.WRITE, argument:outputCharacter});
             this.addTransition(condition,command); 
         }, 
 
@@ -253,11 +254,12 @@
          * @param {String} conditionStateLabel The condition state label.
          * @param {String} conditionCharacter The condition character.
          * @param {String} transitionStateLabel  The state label to transition to.
+         * @param {String} outputCharacter The output character.
          */
-        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, transitionStateLabel){
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, transitionStateLabel, outputCharacter){
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
-            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, transitionState); 
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, transitionState, outputCharacter); 
         }, 
 
 
@@ -294,26 +296,26 @@
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getPointerPosition() >= this.getTape().length()){
+            if(this.getInputPointerPosition() >= this.getTape().length()){
                 
                 this.setIsHalted(true); 
                 // We have run out of characters to read
                 // Are we in an accepting state?
                 if(currentState.getIsAccepting() == true){
                     this.setIsAccepted(true);
-                    this.onAccept.call(currentState,this.getStepCount(), this.getPointerPosition());
+                    this.onAccept.call(currentState,this.getStepCount(), this.getInputPointerPosition());
                 } else {
                     this.setIsAccepted(false); 
-                    this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
+                    this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
 
                 }
 
-                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
+                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
                 return true; 
             }
 
 
-            var currentCharacter = this.getTape().charAt(this.getPointerPosition());  
+            var currentCharacter = this.getTape().charAt(this.getInputPointerPosition());  
 
 
             var condition = new Machine.Condition (
@@ -329,8 +331,8 @@
                 // so we have to halt and reject.
                 this.setIsHalted(true); 
                 this.setIsAccepted(false); 
-                this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
-                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
+                this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
                 return true; 
             }
 
@@ -338,13 +340,22 @@
             // Now we come to the nondegenerate case
 
             // Increment the pointer position 
-            this.setPointerPosition(this.getPointerPosition() + 1); 
+            this.setInputPointerPosition(this.getInputPointerPosition() + 1); 
+
+            // Because this is a finite state transducer, we assume that 
+            // the action is Machine.Command.WRITE
+            if(command.getArgument() != Machine.Alphabet.EPSILON_STRING){
+                this.getOutputTape().alter(this.getOutputPointerPosition(), command.getArgument);
+                this.setOutputPointerPosition(this.getOutputPointerPosition() + 1);
+
+
+            }
 
             // Change the state
             this.setCurrentState(command.getState()); 
 
             // Fire the event
-            this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
+            this.onStep.call(condition, command, this.getStepCount(), this.getInputPointerPosition());
 
             return false; 
 
@@ -377,10 +388,15 @@
         characterDisplay: function() { 
             var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
 
-            s = s + Machine.ANSI.colorize(this.getTape().characterDisplay(this.getPointerPosition()), 
+            s = s + Machine.ANSI.colorize(this.getInputTape().characterDisplay(this.getInputPointerPosition()), 
                 Machine.ANSI.ANSI_YELLOW);
 
             s = s + "\n";
+
+            s = s + Machine.ANSI.colorize(this.getOutputTape().characterDisplay(this.getOutputPointerPosition()), 
+                Machine.ANSI.ANSI_YELLOW);
+
+            s = s + "\n";            
 
             s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()), 
                 Machine.ANSI.ANSI_BLUE);
@@ -390,7 +406,7 @@
                 + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
           
             var currentState = this.getCurrentState(); 
-            var character = this.getTape().charAt(this.getPointerPosition()); 
+            var character = this.getInputTape().charAt(this.getInputPointerPosition()); 
             var condition = new Machine.Condition({state:currentState, character:character}); 
 
             s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
