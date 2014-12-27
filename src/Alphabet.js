@@ -64,7 +64,7 @@
         contains: function(character) {
 
             if(this.unrestricted == true){
-                if (character.length == 1){
+                if (character.length == 1 || character == Machine.Alphabet.EPSILON_STRING){
                     return true; 
                 } else {
                     return false; 
