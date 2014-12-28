@@ -50,14 +50,31 @@
             this.alphabet = alphabet;
         },
 
+        /**
+         * Returns the topmost element of the stack without removing it.
+         * @peek
+         * @return {String} The character
+         */
+        peek:function() { 
+            if(this.data.length > 0) { 
+                return this.data[this.data.length-1]; 
+            } else { 
+                return Machine.Alphabet.EPSILON_STRING;
+            }
+        },
+
 
         /**
          * Removes and returns the topmost element of the stack. 
          * @method
          * @return {String} The character
          */
-        pop: function() { 
-            return this.data.pop(); 
+        pop: function() {
+            if(this.data.length > 0) { 
+                return this.data.pop(); 
+            } else { 
+                return Machine.Alphabet.EPSILON_STRING; 
+            }
         }, 
 
         /**
@@ -93,6 +110,13 @@
             return o; 
         },
 
+        /**
+         * Clears the stack so that it no longer contains any units. 
+         * @method
+         */
+         clear: function() { 
+            this.data = []; 
+         }, 
 
         /**
          * A useful method which returns the state of the tape as a human

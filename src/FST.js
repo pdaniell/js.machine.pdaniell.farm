@@ -291,7 +291,7 @@
          */
         removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter){ 
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
-            var condition = new Machine.Condition({statea:condiitonState, 
+            var condition = new Machine.Condition({state:condiitonState, 
                 character:conditionCharacter}); 
             this.removeTrandition(condition);
         }, 

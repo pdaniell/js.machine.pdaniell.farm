@@ -19,19 +19,31 @@
         // Private Methods
         _init: function(attribs) {
 
-            if(attribs.hasOwnProperty("unrestricted") && 
+            if(attribs && attribs.hasOwnProperty("unrestricted") && 
                     attribs.unrestricted == true){ 
                 this.unrestricted = true; 
             } else { 
                 this.unrestricted = false;
             }
 
-            this.blank = attribs.blank;
-            if (this.blank.length != 1) {
-                throw new Error("Blank character must have length 1");
+            if(attribs && attribs.hasOwnProperty("blank")){
+                
+                if (attribs.blank.length != 1) {
+                    throw new Error("Blank character must have length 1");
+                }
+
+                this.blank = attribs.blank;
+            }  else { 
+                this.blank = " "; 
             }
 
-            if(attribs.hasOwnProperty("chars")){
+            if(attribs && attribs.hasOwnProperty("allowsEpsilon")) {
+                this.allowsEpsilon = attribs.allowsEpsilon; 
+            } else { 
+                this.allowsEpsilon = true; 
+            }
+
+            if(attribs && attribs.hasOwnProperty("chars")){
                 this._setAlphabet(attribs.chars);
             }
         },
@@ -51,20 +63,37 @@
 
         // Public Methods 
 
+        /** 
+         * Returns the value of the allowsEpsilon property. 
+         * @returns {Boolean} True if the allowsEpsilon property is set. 
+         */
+         getAllowsEpsilon: function() { 
+            return this.allowsEpsilon; 
+         }, 
+
+         /**
+          * Sets the allowsEpsilon property. 
+          * @param {Boolean} allowsEpsilon The value of the allows epsilon value. 
+          * 
+          */
+         setAllowsEpsilon: function(allowsEpsilon){
+            this.allowsEpsilon = allowsEpsilon; 
+         },
+
         /**
          * A method to verify whether the argument character is within 
          * the alphabet. If the <pre><code>unrestricted</code></pre> property is 
          * set, the method does nothing more than check that the input is
-         * a single character
+         * a single character (or the epsilon string is permiited. )
          * 
          * @method 
          * @param {String} character A string of length 1. 
-         * @return {Boolean} True if contained.
+         * @return {Boolean} True if accep.
         **/
         contains: function(character) {
 
             if(this.unrestricted == true){
-                if (character.length == 1 || character == Machine.Alphabet.EPSILON_STRING){
+                if (character.length == 1 || (this.getAllowsEpsilon() == true && character == Machine.Alphabet.EPSILON_STRING) ){
                     return true; 
                 } else {
                     return false; 
@@ -72,7 +101,8 @@
 
             }
 
-            if (this.alphabetSet.contains(character)){
+            if (this.alphabetSet.contains(character) || 
+                (this.getAllowsEpsilon()== true && character == Machine.Alphabet.EPSILON_STRING)){
                 return true;
             }
 
@@ -158,16 +188,31 @@
      * @type {Machine.Alphabet}
      * @memberOf  Machine.Alphabet
      */
-    Machine.Alphabet.TALLY_NOTATION = new Machine.Alphabet({blank:"0", chars:"01"}); 
+    Machine.Alphabet.TALLY_NOTATION = new Machine.Alphabet({blank:"0", chars:"01", allowsEpsilon: false}); 
 
     /**
      * An unrestricted alphabet where any character can be used. The blank character
-     * is the space character.
+     * is the space character. This alphabet allows for using the epsilong string.
      * 
      * @const
      *  
      * @type {Machine.Alphabet}
      * @memberOf  Machine.Alphabet
      */
-    Machine.Alphabet.UNRESTRICTED = new Machine.Alphabet({blank: " ", unrestricted:true});
+    Machine.Alphabet.UNRESTRICTED = new Machine.Alphabet({blank: " ", unrestricted:true, allowsEpsilon:true});
+
+
+    /**
+     * An unrestricted alphabet where any character can be used. The blank character
+     * is the space character. This alphabet alphabet does not permit use of the epsilon string.
+     * 
+     * @const
+     *  
+     * @type {Machine.Alphabet}
+     * @memberOf  Machine.Alphabet
+     */
+    Machine.Alphabet.UNRESTRICTED_NOEPSILON = new Machine.Alphabet({blank: " ", unrestricted:true, allowsEpsilon:false});
+
+
+
 })();

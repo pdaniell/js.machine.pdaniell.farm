@@ -2,25 +2,27 @@
 
     /**
      *
-     * This class represents a Deterministic Finite  Automaton (DFA). For more information
-     * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Deterministic_finite_automaton}
+     * This class represents a Pushdown Auitomaton (PDA). For more information
+     * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Pushdown_automaton}
      * and also suggestions for further reading.
      *
      *
-     * @class DFA
+     * @class PDA
      * @constructor
      * @memberof Machine
      * @augments {Machine.BaseMachine}
      * @param {Object} attribs A configuration object
-     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.    
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
+     * @param {Machine.Alphabet} [attribs.stackAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The stack alphabet.    
+     * 
      **/
-    Machine.DFA = function(attribs) {
+    Machine.PDA = function(attribs) {
         this._init(attribs);
     };
 
 
 
-    Machine.DFA.prototype = {
+    Machine.PDA.prototype = {
 
         // Private Methods
         _init: function(attribs) {
@@ -31,10 +33,19 @@
                 Machine.BaseMachine.prototype._init.call(this); 
             }
 
+            if (attribs && attribs.hasOwnProperty("stackAlphabet")) {
+                this.setStackAlphabet(attribs.stackAlphabet);
+            } else {
+                this.setStackAlphabet(Machine.Alphabet.UNRESTRICTED);
+            }
 
-            // The indicator that the DFA has processed its last cell of 
+            // The indicator that the PDA has processed its last cell of 
             // input and it is in an accepting state
             this.isAccepted = false; 
+
+            this.stack = new Machine.Stack({
+                alphabet: this.getStackAlphabet(); 
+            }); 
 
 
             // Now iniitialize the tape. 
@@ -43,21 +54,100 @@
                 chars: ""
             });
 
-            // There is only one pointer on a DFA tape
+            // There is only one pointer on a PDA tape
             // We initialize it here at posiiton 0
             this.pointerPosition = 0; 
 
-            //Some custom listener functions for DFA class
+            //Some custom listener functions for PDA class
             this.onAccept = function(state, stepCount, indexPointer){}; 
             this.onReject = function(state, stepCount, indexPointer){};
-            this.onPointerChange = function(position){};  
-
+            this.onPointerChange = function(position){};
+            this.onStackPop = function(character); 
+            this.onStackPush = function(character); 
         },
 
         //Public Methods
+
+
+        /**
+         * Retrieves the output alphabet for this machine. 
+         * @method
+         * @return {Machine.Alphabet} The output alphabet
+         */
+        getStackAlphabet: function() {
+            return this.stackAlphabet;
+        },
+
+        /**
+         * Sets the stack alphabet for the machine. 
+         * 
+         * @method
+         * @param {Machine.Alphabet} stackAlphabet The output alphabet.
+         */
+        setStackAlphabet: function(stackAlphabet) {
+            this.stackAlphabet = stackAlphabet;
+        },
+
+        /**
+         * Retrieves the stack alphabet.
+         * @method
+         * @return {Machine.Stack} The PDA's stack.
+         */
+        getStack: function() { 
+            return this.stack;
+        }, 
+
+
+        /**
+         * Sets the stack. 
+         * @method 
+         * @param {MachineStack} stack The machine stack
+         * 
+         */
+        setStack: function(stack){
+            this.stack = stack;
+        },
+
+
+        /**
+         * Pops something from the stack. 
+         * @method  
+         * @return {String} The character popped from the stack.
+         */
+        stackPop: function() { 
+            var c = this.getStack().pop(); 
+            this.onStackPop.call(c);
+            return c; 
+        },
+
+        /**
+         * Peeks at the stack. 
+         * @method  
+         * @return {String} The topmost character from the stack.
+         */
+        stackPeek: function() { 
+            var c = this.getStack().peek(); 
+            return c; 
+        },
+
+
+
+        /**
+         * Pushes something onto the stack. 
+         * @method
+         * @param {String} character The character to push onto the stack
+         */
+        stackPush: function(character) { 
+            if(this.getStackAlphabet().contains(character) == false){
+                throw new Error ("Invalid stack character"); 
+            }
+            this.getStack().push(character); 
+            this.onStackPush.call(c);
+        }, 
+
         
         /**
-         * Returns whether the DFA is in an accepting state. 
+         * Returns whether the PDA is in an accepting state. 
          * @method 
          * @return {Boolean} True if in accepted state.
          */
@@ -67,7 +157,7 @@
 
 
          /**
-          * Sets the value of the accepted state of the DFA.
+          * Sets the value of the accepted state of the PDA.
           * @method
           * @param {Boolean} isAccepted The new accepted state.
           * 
@@ -111,7 +201,7 @@
          /** 
           * Sets the tape object. Beware when using this 
           * method, there are no checks of internal consistency
-          * with other aspects of the DFA. 
+          * with other aspects of the PDA. 
           * 
           * @method
           * @param {Machine.Tape} tape The tape
@@ -121,7 +211,7 @@
          }, 
 
          /**
-          * Sets the input string on the tape for the DFA and
+          * Sets the input string on the tape for the PDA and
           * sends the pointer back to the beginning of th string.
           * 
           * @method
@@ -142,6 +232,7 @@
         reset: function() {
             Machine.BaseMachine.prototype.reset.call(this); 
             this.setPointerPosition(0);
+            this.getStack().clear(); 
             this.setIsAccepted(false); 
         },
 
@@ -153,15 +244,18 @@
          * @method
          * @param {Mahine.State} conditionState The condition state.
          * @param {String} conditionCharacter The condition character.
+         * @param {String} conditionStackElement The condition stack element character. 
+         * @param {String} transitionStackElement The transition stack element character. 
          * @param {Machine.State} transitionState  The state to transition to.
          */
-        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState){
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackElement, transitionState){
             var condition = new Machine.Condition({
                 state: conditionState,
-                character:currentCharacter
+                character:currentCharacter, 
+                stackElement: conditionStackElement
             }); 
 
-            var command = new Machine.Command({state:transitionState});
+            var command = new Machine.Command({state:transitionState, action:Machine.Command.STACK_CHANGE, argument: transitionStackElement});
             this.addTransition(condition,command); 
         }, 
 
@@ -170,12 +264,14 @@
          * @method
          * @param {String} conditionStateLabel The condition state label.
          * @param {String} conditionCharacter The condition character.
+         * @param {String} conditionStackElement The condition stack element character. 
+         * @param {String} transitionStackElement The transition stack element character. 
          * @param {String} transitionStateLabel  The state label to transition to.
          */
-        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, transitionStateLabel){
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackElement, transitionStateLabel){
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
-            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, transitionState); 
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackElement, transitionState); 
         }, 
 
 
@@ -184,11 +280,12 @@
          * @method 
          * @param {String} conditionStateLabel The condition state label
          * @param {String} conditionCharacter The condition character
+         * @param {String} conditionStackElement The condition stack element character. 
          */
-        removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter){ 
+        removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter, conditionStackElement){ 
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var condition = new Machine.Condition({state:condiitonState, 
-                character:conditionCharacter}); 
+                character:conditionCharacter, stackElement: stackElement}); 
             this.removeTrandition(condition);
         }, 
 
@@ -197,13 +294,13 @@
 
 
         /** 
-         * Executes one step of the DFA. 
+         * Executes one step of the PDA. 
          * @method
          * @return {Boolean} True if halted
          */
         step: function() { 
             if(this.getIsHalted() == true)  {
-                //The DFA is halted so there is nothing do so, so return. 
+                //The PDA is halted so there is nothing do so, so return. 
                 return true; 
 
             }
@@ -211,6 +308,7 @@
             // Increment the stepCount
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
+            
 
             if(this.getPointerPosition() >= this.getTape().length()){
                 
@@ -270,7 +368,7 @@
 
 
         /**
-         * Runs the DFA with a specified maximum number of steps.
+         * Runs the PDA with a specified maximum number of steps.
          * @method
          * @param {Number} maxSteps The maximum number of steps to execute
          * @returns {Boolean} True if the machine has halted
@@ -288,7 +386,7 @@
 
 
         /**
-         * Creates a human readable string describing the DFA. 
+         * Creates a human readable string describing the PDA. 
          * @method 
          * @return {String} The human readable string.
          */
@@ -328,7 +426,7 @@
 
     };
 
-    Machine.ClassUtils.extend(Machine.DFA, Machine.BaseMachine); 
+    Machine.ClassUtils.extend(Machine.PDA, Machine.BaseMachine); 
 
 
 

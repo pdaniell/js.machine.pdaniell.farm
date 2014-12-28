@@ -246,6 +246,18 @@
          */
         Machine.Command.NOOP = "5";
 
+    var STACK_CHANGE = 
+
+
+        /**
+         * The machien action to push an element on a stack. 
+         * @constant
+         * @static
+         * @type {Object}
+         * @memberOf  Machine.Command
+         */
+        Machine.Command.STACK_CHANGE = "6"; 
+
 
     /**
      * The hashset whih contains all the official machine actions.
@@ -260,7 +272,7 @@
     Machine.Command.ACTION_SET.put(Machine.Command.ERASE, "Er");
     Machine.Command.ACTION_SET.put(Machine.Command.WRITE, "Wr");
     Machine.Command.ACTION_SET.put(Machine.Command.NOOP, "Np");
-
+    Machine.Command.ACTION_SET.put(Machine.Command.STACK_CHANGE, "St");
     /** 
      * A static method which assesses whether an object is a valid action.
      * @method
