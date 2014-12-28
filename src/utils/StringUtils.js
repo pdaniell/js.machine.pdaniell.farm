@@ -29,8 +29,12 @@
 
 
     /**
-     *
-     *
+     * A replace at index psoition utility function. 
+     * @function
+     * @static
+     * @param {String} str The string to modify
+     * @param {Number} index  The position to modify
+     * @param {String} character The replacement character
      *
      */
     Machine.StringUtils.replaceAt = function(str, index, character) {

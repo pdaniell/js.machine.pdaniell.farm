@@ -44,7 +44,7 @@
             this.isAccepted = false; 
 
             this.stack = new Machine.Stack({
-                alphabet: this.getStackAlphabet(); 
+                alphabet: this.getStackAlphabet()
             }); 
 
 
@@ -62,8 +62,8 @@
             this.onAccept = function(state, stepCount, indexPointer){}; 
             this.onReject = function(state, stepCount, indexPointer){};
             this.onPointerChange = function(position){};
-            this.onStackPop = function(character); 
-            this.onStackPush = function(character); 
+            this.onStackPop = function(character){}; 
+            this.onStackPush = function(character){}; 
         },
 
         //Public Methods
@@ -308,7 +308,7 @@
             // Increment the stepCount
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
-            
+
 
             if(this.getPointerPosition() >= this.getTape().length()){
                 
