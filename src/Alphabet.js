@@ -7,8 +7,9 @@
      * @memberof Machine
      * @param {Object} attribs A configuration literal.
      * @param {String} [attribs.chars] A string containing all the characters in the alphabet
-     * @param {String} attribs.blank The blank character
+     * @param {String} [attribs.blank=" "] The blank character
      * @param {Boolean} [attribs.unrestricted=false] A flag which lets all characters to be used in the alphabet. A blank character must still be specified but the chars property will be ignored. 
+     * @param {Boolean} [attribs.allowsEpsilon=true] Allows the epsilon string (i.e. the empty string) as a valid member of the alphabet.
      **/
     Machine.Alphabet = function(attribs) {
         this._init(attribs);

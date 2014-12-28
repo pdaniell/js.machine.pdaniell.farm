@@ -245,17 +245,17 @@
          * @param {Mahine.State} conditionState The condition state.
          * @param {String} conditionCharacter The condition character.
          * @param {String} conditionStackElement The condition stack element character. 
-         * @param {String} transitionStackElement The transition stack element character. 
+         * @param {String} transitionStackString The transition stack string  to push. 
          * @param {Machine.State} transitionState  The state to transition to.
          */
-        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackElement, transitionState){
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState){
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter, 
                 stackElement: conditionStackElement
             }); 
 
-            var command = new Machine.Command({state:transitionState, action:Machine.Command.STACK_CHANGE, argument: transitionStackElement});
+            var command = new Machine.Command({state:transitionState, action:Machine.Command.STACK_CHANGE, argument: transitionStackString});
             this.addTransition(condition,command); 
         }, 
 
@@ -265,13 +265,13 @@
          * @param {String} conditionStateLabel The condition state label.
          * @param {String} conditionCharacter The condition character.
          * @param {String} conditionStackElement The condition stack element character. 
-         * @param {String} transitionStackElement The transition stack element character. 
+         * @param {String} transitionStackString The transition stack string to push. 
          * @param {String} transitionStateLabel  The state label to transition to.
          */
-        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackElement, transitionStateLabel){
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackString, transitionStateLabel){
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
-            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackElement, transitionState); 
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState); 
         }, 
 
 
@@ -308,7 +308,7 @@
             // Increment the stepCount
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
-
+            var topmostStackCharacter = this.stackPeek(); 
 
             if(this.getPointerPosition() >= this.getTape().length()){
                 
