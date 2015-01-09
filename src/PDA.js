@@ -2,7 +2,7 @@
 
     /**
      *
-     * This class represents a Pushdown Auitomaton (PDA). For more information
+     * This class represents a (Deterministic) Pushdown Auitomaton (PDA). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Pushdown_automaton}
      * and also suggestions for further reading.
      *

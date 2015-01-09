@@ -828,8 +828,9 @@ var Machine = {};
      * @memberof Machine
      * @param {Object} attribs A configuration literal.
      * @param {String} [attribs.chars] A string containing all the characters in the alphabet
-     * @param {String} attribs.blank The blank character
+     * @param {String} [attribs.blank=" "] The blank character
      * @param {Boolean} [attribs.unrestricted=false] A flag which lets all characters to be used in the alphabet. A blank character must still be specified but the chars property will be ignored. 
+     * @param {Boolean} [attribs.allowsEpsilon=true] Allows the epsilon string (i.e. the empty string) as a valid member of the alphabet.
      **/
     Machine.Alphabet = function(attribs) {
         this._init(attribs);
@@ -2170,7 +2171,7 @@ var Machine = {};
 
     /**
      *
-     * This class represents a Finite STate Transducer(FST)). For more information
+     * This class represents a (Deterministic) Finite State Transducer(FST)). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Finite_state_transducer}
      * and also suggestions for further reading.
      *
@@ -2205,6 +2206,12 @@ var Machine = {};
                 this.setOutputAlphabet(attribs.outputAlphabet);
             } else {
                 this.setOutputAlphabet(Machine.Alphabet.UNRESTRICTED);
+            }
+
+            if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
+                this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
+            } else { 
+                this.setAllowEpsilonTransitions(true); 
             }
 
 
@@ -2243,6 +2250,26 @@ var Machine = {};
         },
 
         //Public Methods
+
+
+        /**
+         * Retrives whether or not this machine allows epsilon output 
+         * transitions. 
+         * @returns {Boolean} True if epsilon transitions allowed
+         */
+        
+        getAllowEpsilonTransitions: function() { 
+            return this.allowEpsilonTransitions; 
+        }, 
+
+        /**
+         * Sets whether or not this machine allows epsilon transitions. 
+         * @param {Boolean} allowEpsilonTransitions True if epsilon transitions allowed.
+         */
+        setAllowEpsilonTransitions: function(allowEpsilonTransitions){
+
+            this.allowEpsilonTransitions = allowEpsilonTransitions; 
+        }, 
 
         /**
          * Retrieves the output alphabet for this machine. 
@@ -2427,6 +2454,11 @@ var Machine = {};
          * @param {String} outputCharacter The output character.
          */
         addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState, outputCharacter){
+
+            if(outputCharacter == Machine.Alphabet.EPSILON_STRING && this.getAllowEpsilonTransitions() == false) { 
+                throw new Error("Epsilon transitions not permitted for this machine"); 
+            }
+
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter
@@ -2535,8 +2567,8 @@ var Machine = {};
             if(command.getArgument() != Machine.Alphabet.EPSILON_STRING){
                 this.getOutputTape().alter(this.getOutputPointerPosition(), command.getArgument());
                 this.setOutputPointerPosition(this.getOutputPointerPosition() + 1);
-
-
+            } else if(command.getArgument() == Machine.Alphabet.EPSILON_STRING && this.getAllowEpsilonTransitions() == false) { 
+                throw new Error("Epsilon transitions not permitted for this machine."); 
             }
 
             // Change the state
@@ -2623,7 +2655,7 @@ var Machine = {};
 
     /**
      *
-     * This class represents a Pushdown Auitomaton (PDA). For more information
+     * This class represents a (Deterministic) Pushdown Auitomaton (PDA). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Pushdown_automaton}
      * and also suggestions for further reading.
      *
@@ -2866,17 +2898,17 @@ var Machine = {};
          * @param {Mahine.State} conditionState The condition state.
          * @param {String} conditionCharacter The condition character.
          * @param {String} conditionStackElement The condition stack element character. 
-         * @param {String} transitionStackElement The transition stack element character. 
+         * @param {String} transitionStackString The transition stack string  to push. 
          * @param {Machine.State} transitionState  The state to transition to.
          */
-        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackElement, transitionState){
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState){
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter, 
                 stackElement: conditionStackElement
             }); 
 
-            var command = new Machine.Command({state:transitionState, action:Machine.Command.STACK_CHANGE, argument: transitionStackElement});
+            var command = new Machine.Command({state:transitionState, action:Machine.Command.STACK_CHANGE, argument: transitionStackString});
             this.addTransition(condition,command); 
         }, 
 
@@ -2886,13 +2918,13 @@ var Machine = {};
          * @param {String} conditionStateLabel The condition state label.
          * @param {String} conditionCharacter The condition character.
          * @param {String} conditionStackElement The condition stack element character. 
-         * @param {String} transitionStackElement The transition stack element character. 
+         * @param {String} transitionStackString The transition stack string to push. 
          * @param {String} transitionStateLabel  The state label to transition to.
          */
-        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackElement, transitionStateLabel){
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackString, transitionStateLabel){
             var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
             var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
-            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackElement, transitionState); 
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState); 
         }, 
 
 
@@ -2929,7 +2961,7 @@ var Machine = {};
             // Increment the stepCount
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
-
+            var topmostStackCharacter = this.stackPeek(); 
 
             if(this.getPointerPosition() >= this.getTape().length()){
                 

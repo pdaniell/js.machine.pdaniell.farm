@@ -2,7 +2,7 @@
 
     /**
      *
-     * This class represents a Finite STate Transducer(FST)). For more information
+     * This class represents a (Deterministic) Finite State Transducer(FST)). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Finite_state_transducer}
      * and also suggestions for further reading.
      *
@@ -37,6 +37,12 @@
                 this.setOutputAlphabet(attribs.outputAlphabet);
             } else {
                 this.setOutputAlphabet(Machine.Alphabet.UNRESTRICTED);
+            }
+
+            if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
+                this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
+            } else { 
+                this.setAllowEpsilonTransitions(true); 
             }
 
 
@@ -75,6 +81,26 @@
         },
 
         //Public Methods
+
+
+        /**
+         * Retrives whether or not this machine allows epsilon output 
+         * transitions. 
+         * @returns {Boolean} True if epsilon transitions allowed
+         */
+        
+        getAllowEpsilonTransitions: function() { 
+            return this.allowEpsilonTransitions; 
+        }, 
+
+        /**
+         * Sets whether or not this machine allows epsilon transitions. 
+         * @param {Boolean} allowEpsilonTransitions True if epsilon transitions allowed.
+         */
+        setAllowEpsilonTransitions: function(allowEpsilonTransitions){
+
+            this.allowEpsilonTransitions = allowEpsilonTransitions; 
+        }, 
 
         /**
          * Retrieves the output alphabet for this machine. 
@@ -259,6 +285,11 @@
          * @param {String} outputCharacter The output character.
          */
         addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState, outputCharacter){
+
+            if(outputCharacter == Machine.Alphabet.EPSILON_STRING && this.getAllowEpsilonTransitions() == false) { 
+                throw new Error("Epsilon transitions not permitted for this machine"); 
+            }
+
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter
@@ -367,8 +398,8 @@
             if(command.getArgument() != Machine.Alphabet.EPSILON_STRING){
                 this.getOutputTape().alter(this.getOutputPointerPosition(), command.getArgument());
                 this.setOutputPointerPosition(this.getOutputPointerPosition() + 1);
-
-
+            } else if(command.getArgument() == Machine.Alphabet.EPSILON_STRING && this.getAllowEpsilonTransitions() == false) { 
+                throw new Error("Epsilon transitions not permitted for this machine."); 
             }
 
             // Change the state
