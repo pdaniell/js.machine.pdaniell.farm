@@ -1847,6 +1847,7 @@ var Machine = {};
      * @augments {Machine.BaseMachine}
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.    
+     * @param {Boolean} [allowEpsilonTransitions=false] Permit epsilon transitions 
      **/
     Machine.DFA = function(attribs) {
         this._init(attribs);
@@ -1863,6 +1864,13 @@ var Machine = {};
                 Machine.BaseMachine.prototype._init.call(this, attribs); 
             } else {
                 Machine.BaseMachine.prototype._init.call(this); 
+            }
+
+
+            if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
+                this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
+            } else { 
+                this.setAllowEpsilonTransitions(false); 
             }
 
 
@@ -1889,7 +1897,27 @@ var Machine = {};
         },
 
         //Public Methods
+
+        /**
+         * Retrives whether or not this machine allows epsilon  
+         * transitions. 
+         * @returns {Boolean} True if epsilon transitions allowed
+         */
         
+        getAllowEpsilonTransitions: function() { 
+            return this.allowEpsilonTransitions; 
+        }, 
+
+        /**
+         * Sets whether or not this machine allows epsilon transitions. 
+         * @param {Boolean} allowEpsilonTransitions True if epsilon transitions allowed.
+         */
+        setAllowEpsilonTransitions: function(allowEpsilonTransitions){
+
+            this.allowEpsilonTransitions = allowEpsilonTransitions; 
+        }, 
+
+
         /**
          * Returns whether the DFA is in an accepting state. 
          * @method 
@@ -1990,6 +2018,12 @@ var Machine = {};
          * @param {Machine.State} transitionState  The state to transition to.
          */
         addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState){
+
+            if(this.getAllowEpsilonTransitions() == false && currentCharacter == Machine.Alphabet.EPSILON_STRING){ 
+                throw new Error("Epsilon transitions not permitted in this machine"); 
+            }
+
+
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter
@@ -2046,7 +2080,7 @@ var Machine = {};
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getPointerPosition() >= this.getTape().length()){
+            if(this.getPointerPosition() >= this.getTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false ){
                 
                 this.setIsHalted(true); 
                 // We have run out of characters to read
@@ -2065,14 +2099,28 @@ var Machine = {};
             }
 
 
-            var currentCharacter = this.getTape().charAt(this.getPointerPosition());  
+            var currentCharacter = null; 
+            var condition = null; 
 
 
-            var condition = new Machine.Condition (
+
+            if (this.getTransitionFunction().hasEpsilonTransition(currentState)) {
+                //take the epsilon transition
+
+                currentCharacter = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
+
+
+            } else {
+                currentCharacter = this.getTape().charAt(this.getPointerPosition());  
+
+
+                condition = new Machine.Condition (
                 {
                     state: currentState, 
                     character: currentCharacter
                 }); 
+            }
 
             var command = this.getTransitionFunction().getCommand(condition); 
 
@@ -2089,8 +2137,10 @@ var Machine = {};
 
             // Now we come to the nondegenerate case
 
-            // Increment the pointer position 
-            this.setPointerPosition(this.getPointerPosition() + 1); 
+            // Increment the pointer position as long as we are not reading an epsilon string
+            if(currentCharacter != Machine.Alphabet.EPSILON_STRING){
+                this.setPointerPosition(this.getPointerPosition() + 1); 
+            }
 
             // Change the state
             this.setCurrentState(command.getState()); 
@@ -2183,6 +2233,7 @@ var Machine = {};
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
      * @param {Machine.Alphabet} [attribs.outputAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The output alphabet.
+     * @param {Boolean} [allowEpsilonTransitions=true] Permit epsilon transitions 
      **/
     Machine.FST = function(attribs) {
         this._init(attribs);
@@ -2655,35 +2706,36 @@ var Machine = {};
 
     /**
      *
-     * This class represents a (Deterministic) Pushdown Auitomaton (PDA). For more information
+     * This class represents a Deterministic Pushdown Auitomaton (DPDA). For more information
      * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Pushdown_automaton}
      * and also suggestions for further reading.
      *
      *
-     * @class PDA
+     * @class DPDA
      * @constructor
      * @memberof Machine
      * @augments {Machine.BaseMachine}
      * @param {Object} attribs A configuration object
-     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
-     * @param {Machine.Alphabet} [attribs.stackAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The stack alphabet.    
-     * 
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.
+     * @param {Machine.Alphabet} [attribs.stackAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The stack alphabet.
+     * @param {String} [attribs.initialStackSymbol=<blank>] The initial stack symbol to push on to the stack.
+     *
      **/
-    Machine.PDA = function(attribs) {
+    Machine.DPDA = function(attribs) {
         this._init(attribs);
     };
 
 
 
-    Machine.PDA.prototype = {
+    Machine.DPDA.prototype = {
 
         // Private Methods
         _init: function(attribs) {
 
-            if(attribs){
-                Machine.BaseMachine.prototype._init.call(this, attribs); 
+            if (attribs) {
+                Machine.BaseMachine.prototype._init.call(this, attribs);
             } else {
-                Machine.BaseMachine.prototype._init.call(this); 
+                Machine.BaseMachine.prototype._init.call(this);
             }
 
             if (attribs && attribs.hasOwnProperty("stackAlphabet")) {
@@ -2692,38 +2744,69 @@ var Machine = {};
                 this.setStackAlphabet(Machine.Alphabet.UNRESTRICTED);
             }
 
-            // The indicator that the PDA has processed its last cell of 
+
+
+
+            // The indicator that the DPDA has processed its last cell of 
             // input and it is in an accepting state
-            this.isAccepted = false; 
+            this.isAccepted = false;
 
             this.stack = new Machine.Stack({
                 alphabet: this.getStackAlphabet()
-            }); 
+            });
+
+            if(attribs && attribs.hasOwnProperty("initialStackSymbol")){
+                this.setInitialStackSymbol(attribs.initialStackSymbol); 
+            } else { 
+                this.setInitialStackSymbol(this.getStackAlphabet().getBlank()); 
+            }
 
 
             // Now iniitialize the tape. 
             this.tape = new Machine.Tape({
-                alphabet: this.getAlphabet(), 
+                alphabet: this.getAlphabet(),
                 chars: ""
             });
 
-            // There is only one pointer on a PDA tape
+            // There is only one pointer on a DPDA tape
             // We initialize it here at posiiton 0
-            this.pointerPosition = 0; 
+            this.pointerPosition = 0;
 
-            //Some custom listener functions for PDA class
-            this.onAccept = function(state, stepCount, indexPointer){}; 
-            this.onReject = function(state, stepCount, indexPointer){};
-            this.onPointerChange = function(position){};
-            this.onStackPop = function(character){}; 
-            this.onStackPush = function(character){}; 
+            //Some custom listener functions for DPDA class
+            this.onAccept = function(state, stepCount, indexPointer) {};
+            this.onReject = function(state, stepCount, indexPointer) {};
+            this.onPointerChange = function(position) {};
+            this.onStackPop = function(character) {};
+            this.onStackPush = function(character) {};
         },
 
         //Public Methods
 
+        /**
+         * Retieves the initial stack character.
+         * @method
+         * @returns {String} The initial stack character. 
+         */
+        getInitialStackCharacter: function() { 
+            return this.initialStackCharacter;
+        }, 
 
         /**
-         * Retrieves the output alphabet for this machine. 
+         * Sets the initial stack character. 
+         * @method
+         * @param {String} initialStackCharacter The initial stack character
+         */
+        setInitialStackCharacter: function(initialStackCharacter){
+            if(this.getStackAlphabet().contains(initialStackCharacter) == false){ 
+                throw new Error("Invalid initial stack character"); 
+            }
+
+            this.initialStackCharacter = initialStackCharacter;
+        }, 
+
+
+        /**
+         * Retrieves the output alphabet for this machine.
          * @method
          * @return {Machine.Alphabet} The output alphabet
          */
@@ -2732,8 +2815,8 @@ var Machine = {};
         },
 
         /**
-         * Sets the stack alphabet for the machine. 
-         * 
+         * Sets the stack alphabet for the machine.
+         *
          * @method
          * @param {Machine.Alphabet} stackAlphabet The output alphabet.
          */
@@ -2744,138 +2827,138 @@ var Machine = {};
         /**
          * Retrieves the stack alphabet.
          * @method
-         * @return {Machine.Stack} The PDA's stack.
+         * @return {Machine.Stack} The DPDA's stack.
          */
-        getStack: function() { 
+        getStack: function() {
             return this.stack;
-        }, 
+        },
 
 
         /**
-         * Sets the stack. 
-         * @method 
+         * Sets the stack.
+         * @method
          * @param {MachineStack} stack The machine stack
-         * 
+         *
          */
-        setStack: function(stack){
+        setStack: function(stack) {
             this.stack = stack;
         },
 
 
         /**
-         * Pops something from the stack. 
-         * @method  
+         * Pops something from the stack.
+         * @method
          * @return {String} The character popped from the stack.
          */
-        stackPop: function() { 
-            var c = this.getStack().pop(); 
+        stackPop: function() {
+            var c = this.getStack().pop();
             this.onStackPop.call(c);
-            return c; 
+            return c;
         },
 
         /**
-         * Peeks at the stack. 
-         * @method  
+         * Peeks at the stack.
+         * @method
          * @return {String} The topmost character from the stack.
          */
-        stackPeek: function() { 
-            var c = this.getStack().peek(); 
-            return c; 
+        stackPeek: function() {
+            var c = this.getStack().peek();
+            return c;
         },
 
 
 
         /**
-         * Pushes something onto the stack. 
+         * Pushes something onto the stack.
          * @method
          * @param {String} character The character to push onto the stack
          */
-        stackPush: function(character) { 
-            if(this.getStackAlphabet().contains(character) == false){
-                throw new Error ("Invalid stack character"); 
+        stackPush: function(character) {
+            if (this.getStackAlphabet().contains(character) == false) {
+                throw new Error("Invalid stack character");
             }
-            this.getStack().push(character); 
+            this.getStack().push(character);
             this.onStackPush.call(c);
-        }, 
+        },
 
-        
+
         /**
-         * Returns whether the PDA is in an accepting state. 
-         * @method 
+         * Returns whether the DPDA is in an accepting state.
+         * @method
          * @return {Boolean} True if in accepted state.
          */
-         getIsAccepted: function()  {
-            return this.isAccepted; 
-         }, 
+        getIsAccepted: function() {
+            return this.isAccepted;
+        },
 
 
-         /**
-          * Sets the value of the accepted state of the PDA.
-          * @method
-          * @param {Boolean} isAccepted The new accepted state.
-          * 
-          */
-         setIsAccepted: function(isAccepted){
+        /**
+         * Sets the value of the accepted state of the DPDA.
+         * @method
+         * @param {Boolean} isAccepted The new accepted state.
+         *
+         */
+        setIsAccepted: function(isAccepted) {
             this.isAccepted = isAccepted;
-         },
+        },
 
 
-         /**
-          * Returns the tape pointer position. 
-          * @method 
-          * @return {Number} The pointer position.
-          * 
-          */
-         getPointerPosition: function(){
+        /**
+         * Returns the tape pointer position.
+         * @method
+         * @return {Number} The pointer position.
+         *
+         */
+        getPointerPosition: function() {
             return this.pointerPosition;
-         }, 
+        },
 
-         /**
-          * Sets the pointer position. 
-          * @method
-          * @param {Number} pointerPosition The pointer position.
-          */
-         setPointerPosition: function(pointerPosition){
-            this.pointerPosition = pointerPosition; 
+        /**
+         * Sets the pointer position.
+         * @method
+         * @param {Number} pointerPosition The pointer position.
+         */
+        setPointerPosition: function(pointerPosition) {
+            this.pointerPosition = pointerPosition;
             this.onPointerChange.call(this.pointerPosition);
-         },
+        },
 
 
-         /**
-          * Returns the tape object. 
-          * @method
-          * @return {Machine.Tape} The input tape.
-          */
-         getTape: function() { 
+        /**
+         * Returns the tape object.
+         * @method
+         * @return {Machine.Tape} The input tape.
+         */
+        getTape: function() {
             return this.tape;
-         }, 
+        },
 
 
-         /** 
-          * Sets the tape object. Beware when using this 
-          * method, there are no checks of internal consistency
-          * with other aspects of the PDA. 
-          * 
-          * @method
-          * @param {Machine.Tape} tape The tape
-          */
-         setTape: function(tape){
-            this.tape = tape; 
-         }, 
+        /** 
+         * Sets the tape object. Beware when using this
+         * method, there are no checks of internal consistency
+         * with other aspects of the DPDA.
+         *
+         * @method
+         * @param {Machine.Tape} tape The tape
+         */
+        setTape: function(tape) {
+            this.tape = tape;
+        },
 
-         /**
-          * Sets the input string on the tape for the PDA and
-          * sends the pointer back to the beginning of th string.
-          * 
-          * @method
-          * @param {String} input The input string
-          * 
-          */
-         setInputString: function(input) { 
-                this.getTape().setChars(input);
-                this.setPointerPosition(0); 
+        /**
+         * Sets the input string on the tape for the DPDA and
+         * sends the pointer back to the beginning of th string.
+         *
+         * @method
+         * @param {String} input The input string
+         *
+         */
+        setInputString: function(input) {
+            this.getTape().setChars(input);
+            this.setPointerPosition(0);
 
-         },
+        },
 
         /** 
          * Resets the current state to the initial state (i.e. start state)
@@ -2883,12 +2966,12 @@ var Machine = {};
          * @method
          */
         reset: function() {
-            Machine.BaseMachine.prototype.reset.call(this); 
+            Machine.BaseMachine.prototype.reset.call(this);
             this.setPointerPosition(0);
-            this.getStack().clear(); 
-            this.setIsAccepted(false); 
+            this.getStack().clear();
+            this.stackPush(this.getInitialStackCharacter());
+            this.setIsAccepted(false);
         },
-
 
 
 
@@ -2897,189 +2980,212 @@ var Machine = {};
          * @method
          * @param {Mahine.State} conditionState The condition state.
          * @param {String} conditionCharacter The condition character.
-         * @param {String} conditionStackElement The condition stack element character. 
-         * @param {String} transitionStackString The transition stack string  to push. 
+         * @param {String} conditionStackElement The condition stack element character.
+         * @param {String} transitionStackString The transition stack string  to push.
          * @param {Machine.State} transitionState  The state to transition to.
          */
-        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState){
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState) {
             var condition = new Machine.Condition({
                 state: conditionState,
-                character:currentCharacter, 
+                character: currentCharacter,
                 stackElement: conditionStackElement
-            }); 
+            });
 
-            var command = new Machine.Command({state:transitionState, action:Machine.Command.STACK_CHANGE, argument: transitionStackString});
-            this.addTransition(condition,command); 
-        }, 
+            var command = new Machine.Command({
+                state: transitionState,
+                action: Machine.Command.STACK_CHANGE,
+                argument: transitionStackString
+            });
+            this.addTransition(condition, command);
+        },
 
         /** 
          * Adds a transition by state label.
          * @method
          * @param {String} conditionStateLabel The condition state label.
          * @param {String} conditionCharacter The condition character.
-         * @param {String} conditionStackElement The condition stack element character. 
-         * @param {String} transitionStackString The transition stack string to push. 
+         * @param {String} conditionStackElement The condition stack element character.
+         * @param {String} transitionStackString The transition stack string to push.
          * @param {String} transitionStateLabel  The state label to transition to.
          */
-        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackString, transitionStateLabel){
-            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
-            var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel); 
-            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState); 
-        }, 
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, conditionStackElement, transitionStackString, transitionStateLabel) {
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel);
+            var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel);
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, conditionStackElement, transitionStackString, transitionState);
+        },
 
 
         /**
          * Removes a transition by label and character
-         * @method 
+         * @method
          * @param {String} conditionStateLabel The condition state label
          * @param {String} conditionCharacter The condition character
-         * @param {String} conditionStackElement The condition stack element character. 
+         * @param {String} conditionStackElement The condition stack element character.
          */
-        removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter, conditionStackElement){ 
-            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel); 
-            var condition = new Machine.Condition({state:condiitonState, 
-                character:conditionCharacter, stackElement: stackElement}); 
+        removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter, conditionStackElement) {
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel);
+            var condition = new Machine.Condition({
+                state: condiitonState,
+                character: conditionCharacter,
+                stackElement: stackElement
+            });
             this.removeTrandition(condition);
-        }, 
-
-
+        },
 
 
 
         /** 
-         * Executes one step of the PDA. 
+         * Executes one step of the DPDA.
          * @method
          * @return {Boolean} True if halted
          */
-        step: function() { 
-            if(this.getIsHalted() == true)  {
-                //The PDA is halted so there is nothing do so, so return. 
-                return true; 
+        step: function() {
+            if (this.getIsHalted() == true) {
+                //The DPDA is halted so there is nothing do so, so return. 
+                return true;
 
             }
 
             // Increment the stepCount
-            this.setStepCount(this.getStepCount() + 1); 
-            var currentState = this.getCurrentState(); 
-            var topmostStackCharacter = this.stackPeek(); 
+            this.setStepCount(this.getStepCount() + 1);
+            var currentState = this.getCurrentState();
+            var topmostStackCharacter = this.stackPeek();
 
-            if(this.getPointerPosition() >= this.getTape().length()){
-                
-                this.setIsHalted(true); 
+            // Acceptance in a DPDA haooens when the input is expired and the machine is in an accepting state
+            // or the stack has been emptied
+            // 
+            // When the DPDA has run out input it can still take epsilon transitions
+            if (this.getPointerPosition() >= this.getTape().length() && ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
+                topMostCharcter == Machine.Alphabet.EPSILON_STRING)){
+
+                this.setIsHalted(true);
                 // We have run out of characters to read
                 // Are we in an accepting state?
-                if(currentState.getIsAccepting() == true){
+                if (currentState.getIsAccepting() == true || this.getStack().isEmpty() == true) {
                     this.setIsAccepted(true);
-                    this.onAccept.call(currentState,this.getStepCount(), this.getPointerPosition());
+                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
                 } else {
-                    this.setIsAccepted(false); 
-                    this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
+                    this.setIsAccepted(false);
+                    this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
 
                 }
 
-                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
-                return true; 
+                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
+                return true;
             }
 
 
-            var currentCharacter = this.getTape().charAt(this.getPointerPosition());  
+            var currentCharacter = null;
+            var condition = null;
+
+            if (this.getTransitionFunction().hasEpsilonTransition(currentState)) {
+                //take the epsilon transition
+
+                currentCharacter = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
 
 
-            var condition = new Machine.Condition (
-                {
-                    state: currentState, 
-                    character: currentCharacter
-                }); 
+            } else {
 
-            var command = this.getTransitionFunction().getCommand(condition); 
+                currentCharacter = this.getTape().charAt(this.getPointerPosition());
+                condition = new Machine.Condition({
+                    state: currentState,
+                    character: currentCharacter,
+                    stackElement: topmostStackCharcter
+                });
+            }
 
-            if(command == null){ 
+
+
+            var command = this.getTransitionFunction().getCommand(condition);
+
+            if (command == null) {
                 // There was no transition for the appropriate condition
                 // so we have to halt and reject.
-                this.setIsHalted(true); 
-                this.setIsAccepted(false); 
-                this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
-                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
-                return true; 
+                this.setIsHalted(true);
+                this.setIsAccepted(false);
+                this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
+                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
+                return true;
             }
 
 
             // Now we come to the nondegenerate case
-
             // Increment the pointer position 
-            this.setPointerPosition(this.getPointerPosition() + 1); 
+            if (this.getTransitionFunction().stateHasEpsilonTransition(currentState) == false) {
+                this.setPointerPosition(this.getPointerPosition() + 1);
+            }
 
             // Change the state
-            this.setCurrentState(command.getState()); 
+            this.setCurrentState(command.getState());
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
 
-            return false; 
+            return false;
 
-        }, 
+        },
+
 
 
         /**
-         * Runs the PDA with a specified maximum number of steps.
+         * Runs the DPDA with a specified maximum number of steps.
          * @method
          * @param {Number} maxSteps The maximum number of steps to execute
          * @returns {Boolean} True if the machine has halted
          */
-        run: function(maxSteps){ 
-            for(var i=0; i < maxSteps; i++){
-                var returned = this.step(); 
-                if(returned == true){
-                    return true;                    
+        run: function(maxSteps) {
+            for (var i = 0; i < maxSteps; i++) {
+                var returned = this.step();
+                if (returned == true) {
+                    return true;
                 }
             }
 
-            return false; 
-        }, 
+            return false;
+        },
 
 
         /**
-         * Creates a human readable string describing the PDA. 
-         * @method 
+         * Creates a human readable string describing the DPDA.
+         * @method
          * @return {String} The human readable string.
          */
-        characterDisplay: function() { 
-            var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED); 
+        characterDisplay: function() {
+            var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED);
 
-            s = s + Machine.ANSI.colorize(this.getTape().characterDisplay(this.getPointerPosition()), 
+            s = s + Machine.ANSI.colorize(this.getTape().characterDisplay(this.getPointerPosition()),
                 Machine.ANSI.ANSI_YELLOW);
 
             s = s + "\n";
 
-            s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()), 
+            s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()),
                 Machine.ANSI.ANSI_BLUE);
 
-            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: "  
-                + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " 
-                + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
-          
-            var currentState = this.getCurrentState(); 
-            var character = this.getTape().charAt(this.getPointerPosition()); 
-            var condition = new Machine.Condition({state:currentState, character:character}); 
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: " + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
 
-            s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
+            var currentState = this.getCurrentState();
+            var character = this.getTape().charAt(this.getPointerPosition());
+            var condition = new Machine.Condition({
+                state: currentState,
+                character: character
+            });
 
-            s = s +Machine.StringUtils.border((this.getTape().length() * 5)+ 10, Machine.ANSI.ANSI_RED); 
+            s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN);
+
+            s = s + Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED);
 
 
 
-
-            return s; 
+            return s;
 
         }
 
 
 
-
-
     };
 
-    Machine.ClassUtils.extend(Machine.PDA, Machine.BaseMachine); 
+    Machine.ClassUtils.extend(Machine.DPDA, Machine.BaseMachine);
 
 
 
@@ -3135,6 +3241,18 @@ var Machine = {};
         setAlphabet: function(alphabet) {
             this.alphabet = alphabet;
         },
+
+        /**
+         * Returns whether or not the stack is empty 
+         * @returns {Boolean} True if the stack is empty
+         */
+        isEmpty: function() { 
+            if(this.data.length <= 0){
+                return true;
+            }
+
+            return false; 
+        }, 
 
         /**
          * Returns the topmost element of the stack without removing it.
@@ -3709,7 +3827,9 @@ var Machine = {};
      * @constructor
      * @param {Object} attribs The initialization literal.
      * @param {Machine.StateTable} [attribs.stateTable] Start with an already initialized state table. 
-     * @params {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet for the transition function.
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet for the transition function.
+     * @param {Boolean} [requireTotal=false] Makes the retrieve commmand methods throw an error if a condition is missing; otherwise they return null
+     * @param {Boolean} [allowEpsilonTransitions=true] Allow epsilon transitions in the transition function
      *
      **/
     Machine.TransitionFunction = function(attribs) {
@@ -3721,8 +3841,11 @@ var Machine = {};
         // Private Methods
         _init: function(attribs) {
             
-            //this is where we will ulimately map conditions to commands
+            // this is where we will ulimately map conditions to commands
             this.map = new Machine.HashTable();
+
+            // the epsilon transition map
+            this.epsilonMap = new Machine.HashTable();  
 
             if(attribs && attribs.hasOwnProperty("stateTable")){
                 this.stateTable = attribs.stateTable;
@@ -3742,12 +3865,64 @@ var Machine = {};
                 this.requireTotal = false; 
             }
 
+            if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
+                this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
+            } else {
+                this.setAllowEpsilonTransitions(true); 
+
+            }
+
 
 
         },
 
 
         // Public Methods
+        // 
+
+        /**
+         * Retrives the epsilon map, which is a mapping between states and
+         * epsilon conditions. 
+         * 
+         * @returns {Machine.HashTable} The epsilon map.
+         */
+        
+        getEpsilonMap: function() { 
+            return this.epsilonMap; 
+        }, 
+
+        /**
+         * Sets the epsilon map, a mapping between states and the epsilon 
+         * conditions. 
+         * 
+         * @param {Machine.HashTable} epsilonMap The epsilon map. 
+         */
+        setEpilsonMap: function(epsilonMap){
+
+            this.epsilonMap = epsilonMap; 
+        }, 
+ 
+
+
+        /**
+         * Retrives whether or not this function allows epsilon  
+         * transitions. 
+         * @returns {Boolean} True if epsilon transitions allowed
+         */
+        
+        getAllowEpsilonTransitions: function() { 
+            return this.allowEpsilonTransitions; 
+        }, 
+
+        /**
+         * Sets whether or not this function allows epsilon transitions. 
+         * @param {Boolean} allowEpsilonTransitions True if epsilon transitions allowed.
+         */
+        setAllowEpsilonTransitions: function(allowEpsilonTransitions){
+
+            this.allowEpsilonTransitions = allowEpsilonTransitions; 
+        }, 
+ 
         /**
          * Adds a transition to the function using two objects. 
          *         
@@ -3784,6 +3959,42 @@ var Machine = {};
                 throw new Error("Invalid argument for command.");
             }
 
+            if(condition.getCharacter() == Machine.Alphabet.EPSILON_STRING){
+                //we first check to make sure this is permitted 
+                //
+                if(this.getAllowEpsilonTransitions() == false){
+                    throw new Error("Epsilon transitions not permitted in this function"); 
+                }
+
+                // Now make sure that there aren't existing 
+                // transitions. You can only add an epsilon transition when
+                // 
+                var conditions = this.getConditions(); 
+
+                for(var i = 0; i < conditions.length; i++){
+                    var candidateCondition = conditions[i]; 
+                    if(candidateCondition.getState().getLabel() 
+                        == condition.getState().getLabel()) { 
+                        // this state already has an associated transition condition
+                        // so we are not going to be able to add an epsilon transition 
+                        throw new Error("Unable to add epsilon transition because other transitions exist. Delete those first."); 
+                   }
+                }
+
+                // Now we made sure no other conditions are associated with the state
+                // So add the condition to the epsilon map
+                
+                this.getEpsilonMap().put(JSON.stringify(condition.getState()), condition); 
+
+            } else {
+                // we're trying to add a non-epsilon transition
+                // but we shouldn't be able to do it 
+                // if there is a already an epsilon transition associated with the state
+                if(this.hasEpsilonTransition(condition.getState()) == true){
+                    throw new Error("Unable to add transition because there are existing epsilon transitions");
+                }
+            }
+
 
             this.map.put(JSON.stringify(condition), command);
 
@@ -3791,12 +4002,41 @@ var Machine = {};
 
         },
 
+
+        /**
+         * Returns whether or not a given state has an epsilon transition; 
+         * @method 
+         * @param {Machine.State} state The condition state
+         * @return {Boolean} True if this state 
+         * 
+         */
+        hasEpsilonTransition: function(state){
+            return this.getEpsilonMap().containsKey(JSON.stringify(state)); 
+        },
+
+
+        /**
+         * Returns the condition for an epsilon transition for a given state; 
+         * @method
+         * @param {Machine.State} state The condition state
+         * @return {Machine.Condition} The condition or null
+         */
+        getEpsilonTransitionCondition: function(state){ 
+            return this.getEpsilonMap().get(JSON.stringify(state)); 
+        },
+
+
         /**
          * Removes a transition from the mapping by its domain element.
          * @method
          * @param  {Machine.Condition} condition The condition to remove
          */
         removeTransitionByCondition: function(condition) {
+
+            if(this.hasEpsilonTransition(condition.getState()) == true) { 
+                this.getEpsilonMap().remove(JSON.stringify(condition.getState())); 
+            }
+
             this.map.remove(JSON.stringify(condition));
         },
 
