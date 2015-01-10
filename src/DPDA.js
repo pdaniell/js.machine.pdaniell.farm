@@ -347,8 +347,12 @@
             var currentState = this.getCurrentState();
             var topmostStackCharacter = this.stackPeek();
 
-            // Acceptance by  
-            if (this.getPointerPosition() >= this.getTape().length()) {
+            // Acceptance in a DPDA haooens when the input is expired and the machine is in an accepting state
+            // or the stack has been emptied
+            // 
+            // When the DPDA has run out input it can still take epsilon transitions
+            if (this.getPointerPosition() >= this.getTape().length() && ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
+                topMostCharcter == Machine.Alphabet.EPSILON_STRING)){
 
                 this.setIsHalted(true);
                 // We have run out of characters to read
@@ -370,11 +374,11 @@
             var currentCharacter = null;
             var condition = null;
 
-            if (this.getTransitionFunction().stateHasEpsilonTransition(currentState)) {
+            if (this.getTransitionFunction().hasEpsilonTransition(currentState)) {
                 //take the epsilon transition
 
                 currentCharacter = Machine.Alphabet.EPSILON_STRING;
-                condition = this.getTransitionFunction().getEpsilonConditionByState(currentState);
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
 
 
             } else {

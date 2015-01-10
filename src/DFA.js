@@ -13,6 +13,7 @@
      * @augments {Machine.BaseMachine}
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.    
+     * @param {Boolean} [allowEpsilonTransitions=false] Permit epsilon transitions 
      **/
     Machine.DFA = function(attribs) {
         this._init(attribs);
@@ -29,6 +30,13 @@
                 Machine.BaseMachine.prototype._init.call(this, attribs); 
             } else {
                 Machine.BaseMachine.prototype._init.call(this); 
+            }
+
+
+            if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
+                this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
+            } else { 
+                this.setAllowEpsilonTransitions(false); 
             }
 
 
@@ -55,7 +63,27 @@
         },
 
         //Public Methods
+
+        /**
+         * Retrives whether or not this machine allows epsilon  
+         * transitions. 
+         * @returns {Boolean} True if epsilon transitions allowed
+         */
         
+        getAllowEpsilonTransitions: function() { 
+            return this.allowEpsilonTransitions; 
+        }, 
+
+        /**
+         * Sets whether or not this machine allows epsilon transitions. 
+         * @param {Boolean} allowEpsilonTransitions True if epsilon transitions allowed.
+         */
+        setAllowEpsilonTransitions: function(allowEpsilonTransitions){
+
+            this.allowEpsilonTransitions = allowEpsilonTransitions; 
+        }, 
+
+
         /**
          * Returns whether the DFA is in an accepting state. 
          * @method 
@@ -156,6 +184,12 @@
          * @param {Machine.State} transitionState  The state to transition to.
          */
         addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionState){
+
+            if(this.getAllowEpsilonTransitions() == false && currentCharacter == Machine.Alphabet.EPSILON_STRING){ 
+                throw new Error("Epsilon transitions not permitted in this machine"); 
+            }
+
+
             var condition = new Machine.Condition({
                 state: conditionState,
                 character:currentCharacter
@@ -212,7 +246,7 @@
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getPointerPosition() >= this.getTape().length()){
+            if(this.getPointerPosition() >= this.getTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false ){
                 
                 this.setIsHalted(true); 
                 // We have run out of characters to read
@@ -231,14 +265,28 @@
             }
 
 
-            var currentCharacter = this.getTape().charAt(this.getPointerPosition());  
+            var currentCharacter = null; 
+            var condition = null; 
 
 
-            var condition = new Machine.Condition (
+
+            if (this.getTransitionFunction().hasEpsilonTransition(currentState)) {
+                //take the epsilon transition
+
+                currentCharacter = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
+
+
+            } else {
+                currentCharacter = this.getTape().charAt(this.getPointerPosition());  
+
+
+                condition = new Machine.Condition (
                 {
                     state: currentState, 
                     character: currentCharacter
                 }); 
+            }
 
             var command = this.getTransitionFunction().getCommand(condition); 
 
@@ -255,8 +303,10 @@
 
             // Now we come to the nondegenerate case
 
-            // Increment the pointer position 
-            this.setPointerPosition(this.getPointerPosition() + 1); 
+            // Increment the pointer position as long as we are not reading an epsilon string
+            if(currentCharacter != Machine.Alphabet.EPSILON_STRING){
+                this.setPointerPosition(this.getPointerPosition() + 1); 
+            }
 
             // Change the state
             this.setCurrentState(command.getState()); 

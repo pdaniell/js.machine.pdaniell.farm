@@ -14,7 +14,7 @@
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
      * @param {Machine.Alphabet} [attribs.outputAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The output alphabet.
-     * @param {Boolean} [allowEpsilonTransitions] Permit epsilon transitions in the output tape
+     * @param {Boolean} [allowEpsilonTransitions=true] Permit epsilon transitions 
      **/
     Machine.FST = function(attribs) {
         this._init(attribs);
