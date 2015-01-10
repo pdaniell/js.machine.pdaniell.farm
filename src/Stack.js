@@ -51,6 +51,18 @@
         },
 
         /**
+         * Returns whether or not the stack is empty 
+         * @returns {Boolean} True if the stack is empty
+         */
+        isEmpty: function() { 
+            if(this.data.length <= 0){
+                return true;
+            }
+
+            return false; 
+        }, 
+
+        /**
          * Returns the topmost element of the stack without removing it.
          * @peek
          * @return {String} The character

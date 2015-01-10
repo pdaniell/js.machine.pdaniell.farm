@@ -10,7 +10,9 @@
      * @constructor
      * @param {Object} attribs The initialization literal.
      * @param {Machine.StateTable} [attribs.stateTable] Start with an already initialized state table. 
-     * @params {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet for the transition function.
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet for the transition function.
+     * @param {Boolean} [requireTotal=false] Makes the retrieve commmand methods throw an error if a condition is missing; otherwise they return null
+     * @param {Boolean} [allowEpsilonTransitions=true] Allow epsilon transitions in the transition function
      *
      **/
     Machine.TransitionFunction = function(attribs) {
@@ -22,8 +24,11 @@
         // Private Methods
         _init: function(attribs) {
             
-            //this is where we will ulimately map conditions to commands
+            // this is where we will ulimately map conditions to commands
             this.map = new Machine.HashTable();
+
+            // the epsilon transition map
+            this.epsilonMap = new Machine.HashTable();  
 
             if(attribs && attribs.hasOwnProperty("stateTable")){
                 this.stateTable = attribs.stateTable;
@@ -43,12 +48,64 @@
                 this.requireTotal = false; 
             }
 
+            if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
+                this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
+            } else {
+                this.setAllowEpsilonTransitions(true); 
+
+            }
+
 
 
         },
 
 
         // Public Methods
+        // 
+
+        /**
+         * Retrives the epsilon map, which is a mapping between states and
+         * epsilon conditions. 
+         * 
+         * @returns {Machine.HashTable} The epsilon map.
+         */
+        
+        getEpsilonMap: function() { 
+            return this.epsilonMap; 
+        }, 
+
+        /**
+         * Sets the epsilon map, a mapping between states and the epsilon 
+         * conditions. 
+         * 
+         * @param {Machine.HashTable} epsilonMap The epsilon map. 
+         */
+        setEpilsonMap: function(epsilonMap){
+
+            this.epsilonMap = epsilonMap; 
+        }, 
+ 
+
+
+        /**
+         * Retrives whether or not this function allows epsilon  
+         * transitions. 
+         * @returns {Boolean} True if epsilon transitions allowed
+         */
+        
+        getAllowEpsilonTransitions: function() { 
+            return this.allowEpsilonTransitions; 
+        }, 
+
+        /**
+         * Sets whether or not this function allows epsilon transitions. 
+         * @param {Boolean} allowEpsilonTransitions True if epsilon transitions allowed.
+         */
+        setAllowEpsilonTransitions: function(allowEpsilonTransitions){
+
+            this.allowEpsilonTransitions = allowEpsilonTransitions; 
+        }, 
+ 
         /**
          * Adds a transition to the function using two objects. 
          *         
@@ -85,6 +142,42 @@
                 throw new Error("Invalid argument for command.");
             }
 
+            if(condition.getCharacter() == Machine.Alphabet.EPSILON_STRING){
+                //we first check to make sure this is permitted 
+                //
+                if(this.getAllowEpsilonTransitions() == false){
+                    throw new Error("Epsilon transitions not permitted in this function"); 
+                }
+
+                // Now make sure that there aren't existing 
+                // transitions. You can only add an epsilon transition when
+                // 
+                var conditions = this.getConditions(); 
+
+                for(var i = 0; i < conditions.length; i++){
+                    var candidateCondition = conditions[i]; 
+                    if(candidateCondition.getState().getLabel() 
+                        == condition.getState().getLabel()) { 
+                        // this state already has an associated transition condition
+                        // so we are not going to be able to add an epsilon transition 
+                        throw new Error("Unable to add epsilon transition because other transitions exist. Delete those first."); 
+                   }
+                }
+
+                // Now we made sure no other conditions are associated with the state
+                // So add the condition to the epsilon map
+                
+                this.getEpsilonMap().put(JSON.stringify(condition.getState()), condition); 
+
+            } else {
+                // we're trying to add a non-epsilon transition
+                // but we shouldn't be able to do it 
+                // if there is a already an epsilon transition associated with the state
+                if(this.hasEpsilonTransition(condition.getState()) == true){
+                    throw new Error("Unable to add transition because there are existing epsilon transitions");
+                }
+            }
+
 
             this.map.put(JSON.stringify(condition), command);
 
@@ -92,12 +185,41 @@
 
         },
 
+
+        /**
+         * Returns whether or not a given state has an epsilon transition; 
+         * @method 
+         * @param {Machine.State} state The condition state
+         * @return {Boolean} True if this state 
+         * 
+         */
+        hasEpsilonTransition: function(state){
+            return this.getEpsilonMap().containsKey(JSON.stringify(state)); 
+        },
+
+
+        /**
+         * Returns the condition for an epsilon transition for a given state; 
+         * @method
+         * @param {Machine.State} state The condition state
+         * @return {Machine.Condition} The condition or null
+         */
+        getEpsilonTransitionCondition: function(state){ 
+            return this.getEpsilonMap().get(JSON.stringify(state)); 
+        },
+
+
         /**
          * Removes a transition from the mapping by its domain element.
          * @method
          * @param  {Machine.Condition} condition The condition to remove
          */
         removeTransitionByCondition: function(condition) {
+
+            if(this.hasEpsilonTransition(condition.getState()) == true) { 
+                this.getEpsilonMap().remove(JSON.stringify(condition.getState())); 
+            }
+
             this.map.remove(JSON.stringify(condition));
         },
 
