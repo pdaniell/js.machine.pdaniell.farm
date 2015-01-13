@@ -2589,7 +2589,7 @@ var Machine = {};
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getInputPointerPosition() >= this.getInputTape().length()){
+            if(this.getInputPointerPosition() >= this.getInputTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false){
                 
                 this.setIsHalted(true); 
                 // We have run out of characters to read
@@ -2717,8 +2717,25 @@ var Machine = {};
                 + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
           
             var currentState = this.getCurrentState(); 
-            var character = this.getInputTape().charAt(this.getInputPointerPosition()); 
-            var condition = new Machine.Condition({state:currentState, character:character}); 
+            //var character = this.getInputTape().charAt(this.getInputPointerPosition()); 
+            //var condition = new Machine.Condition({state:currentState, character:character}); 
+
+            var character = null; 
+            var condition = null; 
+
+            if(this.getTransitionFunction().hasEpsilonTransition(currentState)){
+
+                character = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
+
+            } else{
+
+                character = this.getInputTape().charAt(this.getInputPointerPosition()); 
+                condition = new Machine.Condition({state:currentState, character:character}); 
+            }
+
+
+
 
             s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
 
