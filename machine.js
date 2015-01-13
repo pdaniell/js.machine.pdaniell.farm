@@ -807,7 +807,7 @@ var Machine = {};
 
 
     /**
-     * A replace at index psoition utility function. 
+     * A replace at index psoition utility function.
      * @function
      * @static
      * @param {String} str The string to modify
@@ -818,6 +818,26 @@ var Machine = {};
     Machine.StringUtils.replaceAt = function(str, index, character) {
         return str.substr(0, index) + character + str.substr(index + character.length);
     }
+
+
+    /**
+     * Replaces the empty string of length zero with an epsilon character
+     * of length 1. Useful for debug output. 
+     * 
+     * @function
+     * @static
+     * @param {String} ch The input character
+     * @return {String} The input character or epsilon if the string is empty
+     **/
+    Machine.StringUtils.transformEpsilon = function(ch) {
+        if (ch == Machine.Alphabet.EPSILON_STRING) {
+            return "ε"
+        } else {
+           return ch; 
+        }
+
+    }
+
 })();
 (function() {
 
@@ -1440,10 +1460,6 @@ var Machine = {};
          * @param {String} stackElement The stack element
          */
         setStackElement: function(stackElement){
-            if(state instanceof Machine.State == false){
-                throw new  Error("attribs.state not of type Machine.State"); 
-            }
-
             this.stackElement = stackElement; 
         }, 
 
@@ -1508,17 +1524,12 @@ var Machine = {};
          */
         characterDisplay: function(){
 
-            var ch = ""; 
-            if(this.getCharacter() == Machine.Alphabet.EPSILON_STRING){
-                ch = "ε"
-            } else { 
-                ch = this.getCharacter(); 
-            }
+            var e = Machine.StringUtils.transformEpsilon; 
 
             if(this.hasStackElement()){
-                return this.getState().getLabel() + "," + ch + "," + this.getStackElement(); 
+                return this.getState().getLabel() + "," + e(this.getCharacter()) + "," + e(this.getStackElement()); 
             } else { 
-                 return this.getState().getLabel() + "," + ch; 
+                 return this.getState().getLabel() + "," + e(this.getCharacter()); 
             }
 
         }
@@ -1870,7 +1881,7 @@ var Machine = {};
             if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
                 this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
             } else { 
-                this.setAllowEpsilonTransitions(false); 
+                this.setAllowEpsilonTransitions(true); 
             }
 
 
@@ -2192,8 +2203,19 @@ var Machine = {};
                 + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
           
             var currentState = this.getCurrentState(); 
-            var character = this.getTape().charAt(this.getPointerPosition()); 
-            var condition = new Machine.Condition({state:currentState, character:character}); 
+            var character = null; 
+            var condition = null; 
+
+            if(this.getTransitionFunction().hasEpsilonTransition(currentState)){
+
+                character = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
+
+            } else{
+
+                character = this.getTape().charAt(this.getPointerPosition()); 
+                condition = new Machine.Condition({state:currentState, character:character}); 
+            }
 
             s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
 
@@ -2586,14 +2608,30 @@ var Machine = {};
             }
 
 
-            var currentCharacter = this.getInputTape().charAt(this.getInputPointerPosition());  
+            var currentCharacter = null; 
+            var condition = null; 
+
+            if (this.getTransitionFunction().hasEpsilonTransition(currentState)) {
+                //take the epsilon transition
+
+                currentCharacter = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
 
 
-            var condition = new Machine.Condition (
-                {
-                    state: currentState, 
-                    character: currentCharacter
-                }); 
+            } else {
+
+
+                currentCharacter = this.getInputTape().charAt(this.getInputPointerPosition());  
+
+
+                condition = new Machine.Condition (
+                    {
+                        state: currentState, 
+                        character: currentCharacter
+                    }); 
+
+
+            }
 
             var command = this.getTransitionFunction().getCommand(condition); 
 
@@ -2611,7 +2649,9 @@ var Machine = {};
             // Now we come to the nondegenerate case
 
             // Increment the pointer position 
-            this.setInputPointerPosition(this.getInputPointerPosition() + 1); 
+            if(currentCharacter != Machine.Alphabet.EPSILON_STRING){
+                this.setInputPointerPosition(this.getInputPointerPosition() + 1); 
+            }
 
             // Because this is a finite state transducer, we assume that 
             // the action is Machine.Command.WRITE
@@ -3052,10 +3092,10 @@ var Machine = {};
             var topmostStackCharacter = this.stackPeek();
 
             // Acceptance in a DPDA haooens when the input is expired and the machine is in an accepting state
-            // or the stack has been emptied
+            // or the stack has been emptied and there are no remaining epsilon transitions
             // 
             // When the DPDA has run out input it can still take epsilon transitions
-            if (this.getPointerPosition() >= this.getTape().length() && ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
+            if (this.getPointerPosition() >= this.getTape().length() || ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false &&
                 topMostCharcter == Machine.Alphabet.EPSILON_STRING)){
 
                 this.setIsHalted(true);
@@ -3110,7 +3150,19 @@ var Machine = {};
             }
 
 
-            // Now we come to the nondegenerate case
+            // We always pop try to pop one character, per convention
+            if(condition.getStackElement() != Machine.Alphabet.EPSILON_STRING){
+                var popCharacter = this.stackPop(); 
+            }
+
+
+
+            if(command.getAction() == Machine.Command.STACK_CHANGE && command.getArgument() != Machine.Alphabet.EPSILON_STRING){
+                this.stackPush(command.getArgument()); 
+            }
+            
+
+
             // Increment the pointer position 
             if (this.getTransitionFunction().stateHasEpsilonTransition(currentState) == false) {
                 this.setPointerPosition(this.getPointerPosition() + 1);
@@ -4177,7 +4229,7 @@ var Machine = {};
          */
         characterDisplay: function(highlightCondition) {
             var s = ""; 
-            var conditions = this.getConditions(); 
+            var conditions = this.getConditions().reverse(); 
             for(var i = 0; i < conditions.length; i++){ 
                 var condition = conditions[i]; 
                 var command = this.getCommand(condition); 

@@ -36,7 +36,7 @@
             if(attribs && attribs.hasOwnProperty("allowEpsilonTransitions")){
                 this.setAllowEpsilonTransitions(attribs.allowEpsilonTransitions); 
             } else { 
-                this.setAllowEpsilonTransitions(false); 
+                this.setAllowEpsilonTransitions(true); 
             }
 
 
@@ -358,8 +358,19 @@
                 + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
           
             var currentState = this.getCurrentState(); 
-            var character = this.getTape().charAt(this.getPointerPosition()); 
-            var condition = new Machine.Condition({state:currentState, character:character}); 
+            var character = null; 
+            var condition = null; 
+
+            if(this.getTransitionFunction().hasEpsilonTransition(currentState)){
+
+                character = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
+
+            } else{
+
+                character = this.getTape().charAt(this.getPointerPosition()); 
+                condition = new Machine.Condition({state:currentState, character:character}); 
+            }
 
             s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN); 
 

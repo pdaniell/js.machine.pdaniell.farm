@@ -360,7 +360,7 @@
          */
         characterDisplay: function(highlightCondition) {
             var s = ""; 
-            var conditions = this.getConditions(); 
+            var conditions = this.getConditions().reverse(); 
             for(var i = 0; i < conditions.length; i++){ 
                 var condition = conditions[i]; 
                 var command = this.getCommand(condition); 

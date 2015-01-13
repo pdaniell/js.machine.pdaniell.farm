@@ -119,17 +119,12 @@
          */
         characterDisplay: function(){
 
-            var ch = ""; 
-            if(this.getCharacter() == Machine.Alphabet.EPSILON_STRING){
-                ch = "ε"
-            } else { 
-                ch = this.getCharacter(); 
-            }
+            var e = Machine.StringUtils.transformEpsilon; 
 
             if(this.hasStackElement()){
-                return this.getState().getLabel() + "," + ch + "," + this.getStackElement(); 
+                return this.getState().getLabel() + "," + e(this.getCharacter()) + "," + e(this.getStackElement()); 
             } else { 
-                 return this.getState().getLabel() + "," + ch; 
+                 return this.getState().getLabel() + "," + e(this.getCharacter()); 
             }
 
         }
