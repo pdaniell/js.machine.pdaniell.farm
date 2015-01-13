@@ -14,29 +14,29 @@ module.exports = function(grunt) {
 
         //Utils 
         'src/utils/ClassUtils.js',
-        'src/utils/HashTable.js', 
+        'src/utils/HashTable.js',
         'src/utils/HashSet.js',
         'src/utils/ANSI.js',
-        'src/utils//StringUtils.js', 
-        
+        'src/utils//StringUtils.js',
+
         // Classes
         'src/Alphabet.js',
         'src/BaseMachine.js',
         'src/Condition.js',
         'src/Command.js',
         'src/DFA.js',
-        'src/FST.js', 
-        'src/DPDA.js', 
+        'src/FST.js',
+        'src/DPDA.js',
         'src/TM.js',
-        'src/Stack.js', 
+        'src/Stack.js',
         'src/State.js',
         'src/StateTable.js',
         'src/Tape.js',
         'src/TransitionFunction.js'
     ];
 
-    var testFiles = [ './test/**/*.js' ]; 
-    var testSuite = srcFiles.concat(testFiles); 
+    var testFiles = ['./test/**/*.js'];
+    var testSuite = srcFiles.concat(testFiles);
 
     // Setup the config object
     var config = {
@@ -108,7 +108,15 @@ module.exports = function(grunt) {
 
                 // start these browsers
                 // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-                browsers: ['Chrome'],
+                browsers: ['chromeIncognito'],
+
+                // you can define custom flags
+                customLaunchers: {
+                    chromeIncognito: {
+                        base: 'Chrome',
+                        flags: ['--incognito']
+                    }
+                },
 
 
                 // Continuous Integration mode
@@ -119,7 +127,7 @@ module.exports = function(grunt) {
 
             dev: {
                 options: {
-                    files:testSuite, 
+                    files: testSuite,
                 }
             },
 
