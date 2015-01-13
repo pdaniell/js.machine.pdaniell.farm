@@ -367,14 +367,30 @@
             }
 
 
-            var currentCharacter = this.getInputTape().charAt(this.getInputPointerPosition());  
+            var currentCharacter = null; 
+            var condition = null; 
+
+            if (this.getTransitionFunction().hasEpsilonTransition(currentState)) {
+                //take the epsilon transition
+
+                currentCharacter = Machine.Alphabet.EPSILON_STRING;
+                condition = this.getTransitionFunction().getEpsilonTransitionCondition(currentState);
 
 
-            var condition = new Machine.Condition (
-                {
-                    state: currentState, 
-                    character: currentCharacter
-                }); 
+            } else {
+
+
+                currentCharacter = this.getInputTape().charAt(this.getInputPointerPosition());  
+
+
+                condition = new Machine.Condition (
+                    {
+                        state: currentState, 
+                        character: currentCharacter
+                    }); 
+
+
+            }
 
             var command = this.getTransitionFunction().getCommand(condition); 
 
@@ -392,7 +408,9 @@
             // Now we come to the nondegenerate case
 
             // Increment the pointer position 
-            this.setInputPointerPosition(this.getInputPointerPosition() + 1); 
+            if(currentCharacter != Machine.Alphabet.EPSILON_STRING){
+                this.setInputPointerPosition(this.getInputPointerPosition() + 1); 
+            }
 
             // Because this is a finite state transducer, we assume that 
             // the action is Machine.Command.WRITE

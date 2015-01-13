@@ -348,10 +348,10 @@
             var topmostStackCharacter = this.stackPeek();
 
             // Acceptance in a DPDA haooens when the input is expired and the machine is in an accepting state
-            // or the stack has been emptied
+            // or the stack has been emptied and there are no remaining epsilon transitions
             // 
             // When the DPDA has run out input it can still take epsilon transitions
-            if (this.getPointerPosition() >= this.getTape().length() && ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
+            if (this.getPointerPosition() >= this.getTape().length() || ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false &&
                 topMostCharcter == Machine.Alphabet.EPSILON_STRING)){
 
                 this.setIsHalted(true);
@@ -406,7 +406,19 @@
             }
 
 
-            // Now we come to the nondegenerate case
+            // We always pop try to pop one character, per convention
+            if(condition.getStackElement() != Machine.Alphabet.EPSILON_STRING){
+                var popCharacter = this.stackPop(); 
+            }
+
+
+
+            if(command.getAction() == Machine.Command.STACK_CHANGE && command.getArgument() != Machine.Alphabet.EPSILON_STRING){
+                this.stackPush(command.getArgument()); 
+            }
+            
+
+
             // Increment the pointer position 
             if (this.getTransitionFunction().stateHasEpsilonTransition(currentState) == false) {
                 this.setPointerPosition(this.getPointerPosition() + 1);

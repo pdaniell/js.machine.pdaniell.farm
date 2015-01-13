@@ -55,10 +55,6 @@
          * @param {String} stackElement The stack element
          */
         setStackElement: function(stackElement){
-            if(state instanceof Machine.State == false){
-                throw new  Error("attribs.state not of type Machine.State"); 
-            }
-
             this.stackElement = stackElement; 
         }, 
 
