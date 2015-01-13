@@ -8,7 +8,7 @@
      * @constructor
      * @param {Object} attribs The initialization literal.
      * @param {String} attribs.label The label for the state. 
-     * @param {Boolean} isAccepting A flag indicating the state is an accepting state.
+     * @param {Boolean} attribs.isAccepting A flag indicating the state is an accepting state.
      *
      **/
     Machine.State = function(attribs) {

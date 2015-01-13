@@ -11,8 +11,8 @@
      * @param {Object} attribs The initialization literal.
      * @param {Machine.StateTable} [attribs.stateTable] Start with an already initialized state table. 
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet for the transition function.
-     * @param {Boolean} [requireTotal=false] Makes the retrieve commmand methods throw an error if a condition is missing; otherwise they return null
-     * @param {Boolean} [allowEpsilonTransitions=true] Allow epsilon transitions in the transition function
+     * @param {Boolean} [attribs.requireTotal=false] Makes the retrieve commmand methods throw an error if a condition is missing; otherwise they return null
+     * @param {Boolean} [attribs.allowEpsilonTransitions=true] Allow epsilon transitions in the transition function
      *
      **/
     Machine.TransitionFunction = function(attribs) {
