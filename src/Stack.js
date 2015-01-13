@@ -90,21 +90,26 @@
         }, 
 
         /**
-         *  Adds a topmost element to the stack. 
+         *  Adds a string to the stack. Note that the last element
+         *  of the string is added to the stack first. 
          *  @method
-         *  @param {String} character The stack character to push
+         *  @param {String} str The stack string to push
          * 
          */
-        push: function(character){
+        push: function(str){
             
-            if(character === Machine.Alphabet.EMPTY_STRING) { 
+            if(str === Machine.Alphabet.EPSILON_STRING) { 
                 return; 
             }
 
-            if(this.getAlphabet().contains(character) == false)  {
-                throw new Error("Invalid character for stack element"); 
-            }            
-            this.data.push(character); 
+            if(this.getAlphabet().isCompatibleWith(str) == false)  {
+                throw new Error("Invalid string for stack push."); 
+            } 
+
+            for(var i = str.length -1; i >=0; i--){           
+                var ch = str.charAt(i); 
+                this.data.push(ch); 
+            }
         },
 
         /**
@@ -147,11 +152,19 @@
             s = s + "\n";
 
             //tape contents
-            s += "|";
+            if(this.data.length == 0){
+                s += Machine.ANSI.invert("|Ø|"); 
+            } else{
+                s += "|";
+            }
             for (var i = 0; i < this.data.length; i++) {
                 var character = this.data[i];
 
-                s = s + " " + character;
+                if(i == (this.data.length-1)){
+                    s  = s +  Machine.ANSI.invert("*" + character);
+                } else {
+                    s = s + " " + character;
+                }
                 s = s + " |";
             }
 

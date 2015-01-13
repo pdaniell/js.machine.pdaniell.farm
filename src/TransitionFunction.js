@@ -365,7 +365,7 @@
                 var condition = conditions[i]; 
                 var command = this.getCommand(condition); 
                 if (condition.getState().getLabel() == highlightCondition.getState().getLabel() &&
-                    condition.getCharacter() == highlightCondition.getCharacter())
+                    condition.getCharacter() == highlightCondition.getCharacter() && condition.getStackElement() == highlightCondition.getStackElement())
                  { 
                     s += Machine.ANSI.invert("(" + condition.characterDisplay() + ":"  + command.characterDisplay() + ")"); 
                 } else {
