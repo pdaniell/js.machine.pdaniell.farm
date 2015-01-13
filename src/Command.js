@@ -266,13 +266,48 @@
      * @type {Machine.HashTable}
      * @memberOf  Machine.Command
      */
-    Machine.Command.ACTION_SET = new Machine.HashTable();
-    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_RIGHT, "Ri");
-    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_LEFT, "Le");
-    Machine.Command.ACTION_SET.put(Machine.Command.ERASE, "Er");
-    Machine.Command.ACTION_SET.put(Machine.Command.WRITE, "Wr");
-    Machine.Command.ACTION_SET.put(Machine.Command.NOOP, "Np");
-    Machine.Command.ACTION_SET.put(Machine.Command.STACK_CHANGE, "St");
+    Machine.Command.ACTION_MAP = new Machine.HashTable();
+    Machine.Command.ACTION_MAP.put(Machine.Command.MOVE_RIGHT, "R");
+    Machine.Command.ACTION_MAP.put(Machine.Command.MOVE_LEFT, "L");
+    Machine.Command.ACTION_MAP.put(Machine.Command.ERASE, "Er");
+    Machine.Command.ACTION_MAP.put(Machine.Command.WRITE, "Wr");
+    Machine.Command.ACTION_MAP.put(Machine.Command.NOOP, "Np");
+    Machine.Command.ACTION_MAP.put(Machine.Command.STACK_CHANGE, "St");
+
+
+    /**
+     * The hashset which contains long descriptions of machines as actions.
+     * @static
+     * @type {Machine.HashTable}
+     * @memberOf  Machine.Command
+     */
+    Machine.Command.DESCRIPTION_MAP = new Machine.HashTable();
+    Machine.Command.DESCRIPTION_MAP.put("RIGHT", Machine.Command.MOVE_RIGHT);
+    Machine.Command.DESCRIPTION_MAP.put("LEFT", Machine.Command.MOVE_LEFT);
+    Machine.Command.DESCRIPTION_MAP.put("ERASE", Machine.Command.ERASE);
+    Machine.Command.DESCRIPTION_MAP.put("WRITE", Machine.Command.WRITE);
+    Machine.Command.DESCRIPTION_MAP.put("NOOP", Machine.Command.NOOP);
+    Machine.Command.DESCRIPTION_MAP.put("STACKCHANGE", Machine.Command.STACK_CHANGE);
+
+    /**
+     * A static method which returns an action from a description.
+     * 
+     * @method
+     * @static
+     * @memberOf  Machine.Command
+     * @param {String} @description The description of the action
+     */
+    Machine.Command.getActionFromDescription = function(descr) {
+        if(Machine.Command.DESCRIPTION_MAP.containsKey(descr.trim().toUpperCase()) == false){
+            throw new Error("Invalid action description key:" + descr); 
+        }
+
+        return Machine.Command.DESCRIPTION_MAP.get(descr.trim().toUpperCase());
+    };
+
+
+
+
     /** 
      * A static method which assesses whether an object is a valid action.
      * @method
@@ -280,12 +315,12 @@
      *  @memberof Machine.Command
      **/
     Machine.Command.isValidAction = function(command) {
-        return Machine.Command.ACTION_SET.containsKey(command);
+        return Machine.Command.ACTION_MAP.containsKey(command);
     };
 
 
     /**
-     * A statuc netgid which returns a short description code for a
+     * A static method which returns a short description code for a
      * machine action.
      * @method
      * @static
@@ -296,7 +331,7 @@
             throw new Error("Invalid action");
         }
 
-        return Machine.Command.ACTION_SET.get(command);
+        return Machine.Command.ACTION_MAP.get(command);
 
     };
 

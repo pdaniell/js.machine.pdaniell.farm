@@ -1807,13 +1807,48 @@ var Machine = {};
      * @type {Machine.HashTable}
      * @memberOf  Machine.Command
      */
-    Machine.Command.ACTION_SET = new Machine.HashTable();
-    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_RIGHT, "Ri");
-    Machine.Command.ACTION_SET.put(Machine.Command.MOVE_LEFT, "Le");
-    Machine.Command.ACTION_SET.put(Machine.Command.ERASE, "Er");
-    Machine.Command.ACTION_SET.put(Machine.Command.WRITE, "Wr");
-    Machine.Command.ACTION_SET.put(Machine.Command.NOOP, "Np");
-    Machine.Command.ACTION_SET.put(Machine.Command.STACK_CHANGE, "St");
+    Machine.Command.ACTION_MAP = new Machine.HashTable();
+    Machine.Command.ACTION_MAP.put(Machine.Command.MOVE_RIGHT, "R");
+    Machine.Command.ACTION_MAP.put(Machine.Command.MOVE_LEFT, "L");
+    Machine.Command.ACTION_MAP.put(Machine.Command.ERASE, "Er");
+    Machine.Command.ACTION_MAP.put(Machine.Command.WRITE, "Wr");
+    Machine.Command.ACTION_MAP.put(Machine.Command.NOOP, "Np");
+    Machine.Command.ACTION_MAP.put(Machine.Command.STACK_CHANGE, "St");
+
+
+    /**
+     * The hashset which contains long descriptions of machines as actions.
+     * @static
+     * @type {Machine.HashTable}
+     * @memberOf  Machine.Command
+     */
+    Machine.Command.DESCRIPTION_MAP = new Machine.HashTable();
+    Machine.Command.DESCRIPTION_MAP.put("RIGHT", Machine.Command.MOVE_RIGHT);
+    Machine.Command.DESCRIPTION_MAP.put("LEFT", Machine.Command.MOVE_LEFT);
+    Machine.Command.DESCRIPTION_MAP.put("ERASE", Machine.Command.ERASE);
+    Machine.Command.DESCRIPTION_MAP.put("WRITE", Machine.Command.WRITE);
+    Machine.Command.DESCRIPTION_MAP.put("NOOP", Machine.Command.NOOP);
+    Machine.Command.DESCRIPTION_MAP.put("STACKCHANGE", Machine.Command.STACK_CHANGE);
+
+    /**
+     * A static method which returns an action from a description.
+     * 
+     * @method
+     * @static
+     * @memberOf  Machine.Command
+     * @param {String} @description The description of the action
+     */
+    Machine.Command.getActionFromDescription = function(descr) {
+        if(Machine.Command.DESCRIPTION_MAP.containsKey(descr.trim().toUpperCase()) == false){
+            throw new Error("Invalid action description key:" + descr); 
+        }
+
+        return Machine.Command.DESCRIPTION_MAP.get(descr.trim().toUpperCase());
+    };
+
+
+
+
     /** 
      * A static method which assesses whether an object is a valid action.
      * @method
@@ -1821,12 +1856,12 @@ var Machine = {};
      *  @memberof Machine.Command
      **/
     Machine.Command.isValidAction = function(command) {
-        return Machine.Command.ACTION_SET.containsKey(command);
+        return Machine.Command.ACTION_MAP.containsKey(command);
     };
 
 
     /**
-     * A statuc netgid which returns a short description code for a
+     * A static method which returns a short description code for a
      * machine action.
      * @method
      * @static
@@ -1837,7 +1872,7 @@ var Machine = {};
             throw new Error("Invalid action");
         }
 
-        return Machine.Command.ACTION_SET.get(command);
+        return Machine.Command.ACTION_MAP.get(command);
 
     };
 
@@ -1858,7 +1893,7 @@ var Machine = {};
      * @augments {Machine.BaseMachine}
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.    
-     * @param {Boolean} [allowEpsilonTransitions=false] Permit epsilon transitions 
+     * @param {Boolean} [attribs.allowEpsilonTransitions=false] Permit epsilon transitions 
      **/
     Machine.DFA = function(attribs) {
         this._init(attribs);
@@ -2073,7 +2108,36 @@ var Machine = {};
 
 
 
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly. 
+         * 
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function(){ 
+            if(this.getPointerPosition() >= this.getTape().length() && this.getTransitionFunction().hasEpsilonTransition(this.getCurrentState()) == false ){
+                
+                this.setIsHalted(true); 
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if(this.getCurrentState().getIsAccepting() == true){
+                    this.setIsAccepted(true);
+                    this.onAccept.call(this.getCurrentState(),this.getStepCount(), this.getPointerPosition());
+                } else {
+                    this.setIsAccepted(false); 
+                    this.onReject.call(this.getCurrentState(),this.getStepCount(), this.getPointerPosition());
 
+                }
+
+                this.onHalt.call(this.getCurrentState(),this.getStepCount(), this.getPointerPosition());
+                return true; 
+            }
+
+            return false; 
+
+
+        },
 
         /** 
          * Executes one step of the DFA. 
@@ -2091,21 +2155,7 @@ var Machine = {};
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getPointerPosition() >= this.getTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false ){
-                
-                this.setIsHalted(true); 
-                // We have run out of characters to read
-                // Are we in an accepting state?
-                if(currentState.getIsAccepting() == true){
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState,this.getStepCount(), this.getPointerPosition());
-                } else {
-                    this.setIsAccepted(false); 
-                    this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
-
-                }
-
-                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
+            if(this.halt() == true){
                 return true; 
             }
 
@@ -2158,6 +2208,14 @@ var Machine = {};
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
+
+
+            // Check again for halting conditions
+
+            if(this.halt() == true){
+                return true; 
+            }
+
 
             return false; 
 
@@ -2255,7 +2313,7 @@ var Machine = {};
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
      * @param {Machine.Alphabet} [attribs.outputAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The output alphabet.
-     * @param {Boolean} [allowEpsilonTransitions=true] Permit epsilon transitions 
+     * @param {Boolean} [attribs.allowEpsilonTransitions=true] Permit epsilon transitions 
      **/
     Machine.FST = function(attribs) {
         this._init(attribs);
@@ -2570,7 +2628,36 @@ var Machine = {};
         }, 
 
 
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly. 
+         * 
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function(){ 
+            var currentState = this.getCurrentState(); 
 
+
+            if(this.getInputPointerPosition() >= this.getInputTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false){
+                
+                this.setIsHalted(true); 
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if(currentState.getIsAccepting() == true){
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                } else {
+                    this.setIsAccepted(false); 
+                    this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+
+                }
+
+                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                return true; 
+            }
+
+        }, 
 
 
         /** 
@@ -2589,21 +2676,8 @@ var Machine = {};
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getInputPointerPosition() >= this.getInputTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false){
-                
-                this.setIsHalted(true); 
-                // We have run out of characters to read
-                // Are we in an accepting state?
-                if(currentState.getIsAccepting() == true){
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState,this.getStepCount(), this.getInputPointerPosition());
-                } else {
-                    this.setIsAccepted(false); 
-                    this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
 
-                }
-
-                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+            if(this.halt() == true){
                 return true; 
             }
 
@@ -2664,6 +2738,13 @@ var Machine = {};
 
             // Change the state
             this.setCurrentState(command.getState()); 
+
+
+            // Check again for halting conditions
+            if(this.halt() == true){
+                return true; 
+            }
+
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getInputPointerPosition());
@@ -2784,26 +2865,26 @@ var Machine = {};
 
 
     /**
-     * Accepting mode by state. 
-     * 
+     * Accepting mode by state.
+     *
      * @constant
      * @static
      * @type {String}
-     * @memberOf  Member.DPDA 
+     * @memberOf  Member.DPDA
      */
-    Machine.DPDA.ACCEPT_BY_STATE = "0"; 
+    Machine.DPDA.ACCEPT_BY_STATE = "0";
 
 
 
     /**
      * Accepting mode by stack
-     * 
+     *
      * @constant
      * @static
      * @type {String}
-     * @memberOf  Member.DPDA 
+     * @memberOf  Member.DPDA
      */
-    Machine.DPDA.ACCEPT_BY_STACK = "1"; 
+    Machine.DPDA.ACCEPT_BY_STACK = "1";
 
     /**
      * The hashset whih contains all the official PDA acceptance modes.
@@ -2812,9 +2893,9 @@ var Machine = {};
      * @type {Machine.HashTable}
      * @memberOf  Machine.DPDA
      */
-    Machine.DPDA.ACCEPTANCE_MODES_SET = new Machine.HashTable(); 
-    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STATE, "State"); 
-    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STACK, "Stack"); 
+    Machine.DPDA.ACCEPTANCE_MODES_SET = new Machine.HashTable();
+    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STATE, "State");
+    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STACK, "Stack");
 
     Machine.DPDA.prototype = {
 
@@ -2834,7 +2915,7 @@ var Machine = {};
             }
 
 
-            this.acceptanceMode = null; 
+            this.acceptanceMode = null;
 
 
             // The indicator that the DPDA has processed its last cell of 
@@ -2845,12 +2926,12 @@ var Machine = {};
                 alphabet: this.getStackAlphabet()
             });
 
-            if(attribs && attribs.hasOwnProperty("initialStackSymbol")){
-                this.setInitialStackSymbol(attribs.initialStackSymbol); 
-            } else { 
-                this.setInitialStackSymbol(this.getStackAlphabet().getBlank()); 
+            if (attribs && attribs.hasOwnProperty("initialStackSymbol")) {
+                this.setInitialStackSymbol(attribs.initialStackSymbol);
+            } else {
+                this.setInitialStackSymbol(this.getStackAlphabet().getBlank());
             }
-            
+
 
 
             // Now iniitialize the tape. 
@@ -2875,56 +2956,56 @@ var Machine = {};
         },
 
         //Public Methods
-        
+
         /**
-         * Retieves the acceptance mode of the DPDA. 
+         * Retieves the acceptance mode of the DPDA.
          * @returns {String} The acceptance mode.
-         * 
+         *
          */
-        getAcceptanceMode: function(){
-            return this.acceptanceMode; 
+        getAcceptanceMode: function() {
+            return this.acceptanceMode;
         },
 
 
         /**
-         * Retieves the acceptance mode name of the DPDA. 
+         * Retieves the acceptance mode name of the DPDA.
          * @returns {String} The acceptance mode name
-         * 
+         *
          */
-        getAcceptanceModeName: function(){
-            return  Machine.DPDA.ACCEPTANCE_MODES_SET.get(this.getAcceptanceMode()); 
+        getAcceptanceModeName: function() {
+            return Machine.DPDA.ACCEPTANCE_MODES_SET.get(this.getAcceptanceMode());
         },
 
         /**
          * Sets the acceptance mode.
          * @param {String} acceptanceMode The acceptance mode.
-         * 
+         *
          */
-        setAcceptanceMode: function(acceptanceMode){
-            this.acceptanceMode = acceptanceMode; 
-        }, 
+        setAcceptanceMode: function(acceptanceMode) {
+            this.acceptanceMode = acceptanceMode;
+        },
 
         /**
          * Retieves the initial stack character.
          * @method
-         * @returns {String} The initial stack character. 
+         * @returns {String} The initial stack character.
          */
-        getInitialStackSymbol: function() { 
+        getInitialStackSymbol: function() {
             return this.initialStackSymbol;
-        }, 
+        },
 
         /**
-         * Sets the initial stack character. 
+         * Sets the initial stack character.
          * @method
          * @param {String} initialStackSymbol The initial stack character
          */
-        setInitialStackSymbol: function(initialStackSymbol){
-            if(this.getStackAlphabet().contains(initialStackSymbol) == false){ 
-                throw new Error("Invalid initial stack character"); 
+        setInitialStackSymbol: function(initialStackSymbol) {
+            if (this.getStackAlphabet().contains(initialStackSymbol) == false) {
+                throw new Error("Invalid initial stack character");
             }
 
             this.initialStackSymbol = initialStackSymbol;
-        }, 
+        },
 
 
         /**
@@ -3154,6 +3235,51 @@ var Machine = {};
             this.removeTrandition(condition);
         },
 
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly.
+         *
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function() {
+
+            var currentState = this.getCurrentState(); 
+            var topmostStackCharacter = this.stackPeek(); 
+
+
+            // Acceptance in a DPDA happens when the input is expired and the machine is in an accepting state
+            // or the input has been emptied, the stack has been emptied and there are no remaining epsilon transitions
+            // 
+            // When the DPDA has run out input it can still take epsilon transitions
+            if (this.getPointerPosition() >= this.getTape().length() && (this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
+                    topmostStackCharacter == Machine.Alphabet.EPSILON_STRING)) {
+
+                this.setIsHalted(true);
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if (currentState.getIsAccepting() == true) {
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
+
+                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STATE);
+                } else if (this.getStack().isEmpty() == true) {
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
+
+                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STACK);
+                } else {
+                    this.setIsAccepted(false);
+                    this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
+
+                }
+
+                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
+                return true;
+            }
+
+        },
+
 
 
         /** 
@@ -3173,36 +3299,11 @@ var Machine = {};
             var currentState = this.getCurrentState();
             var topmostStackCharacter = this.stackPeek();
 
-
-            // Acceptance in a DPDA happens when the input is expired and the machine is in an accepting state
-            // or the input has been emptied, the stack has been emptied and there are no remaining epsilon transitions
-            // 
-            // When the DPDA has run out input it can still take epsilon transitions
-            if (this.getPointerPosition() >= this.getTape().length() && ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
-                topmostStackCharacter == Machine.Alphabet.EPSILON_STRING)){
-
-                this.setIsHalted(true);
-                // We have run out of characters to read
-                // Are we in an accepting state?
-                if (currentState.getIsAccepting() == true)  {
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
-
-                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STATE); 
-                } else if(this.getStack().isEmpty() == true){
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
-
-                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STACK); 
-                }else {
-                    this.setIsAccepted(false);
-                    this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
-
-                }
-
-                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
-                return true;
+            // Check for halting conditions
+            if(this.halt() == true){
+                return true; 
             }
+
 
 
             var currentCharacter = null;
@@ -3241,16 +3342,16 @@ var Machine = {};
 
 
             // We always pop try to pop one character, per convention
-            if(condition.getStackElement() != Machine.Alphabet.EPSILON_STRING){
-                var popCharacter = this.stackPop(); 
+            if (condition.getStackElement() != Machine.Alphabet.EPSILON_STRING) {
+                var popCharacter = this.stackPop();
             }
 
 
 
-            if(command.getAction() == Machine.Command.STACK_CHANGE && command.getArgument() != Machine.Alphabet.EPSILON_STRING){
-                this.stackPush(command.getArgument()); 
+            if (command.getAction() == Machine.Command.STACK_CHANGE && command.getArgument() != Machine.Alphabet.EPSILON_STRING) {
+                this.stackPush(command.getArgument());
             }
-            
+
 
 
             // Increment the pointer position 
@@ -3260,6 +3361,14 @@ var Machine = {};
 
             // Change the state
             this.setCurrentState(command.getState());
+
+
+            //Check for halting conditions again
+            if(this.halt() == true){
+                return true; 
+            }
+
+
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
@@ -3300,8 +3409,8 @@ var Machine = {};
                 Machine.ANSI.ANSI_YELLOW);
 
             var mode = "";
-            if(this.getIsAccepted()){ 
-                mode = "[" + this.getAcceptanceModeName() + "]"; 
+            if (this.getIsAccepted()) {
+                mode = "[" + this.getAcceptanceModeName() + "]";
             }
 
             s = s + "\n";
@@ -3309,13 +3418,13 @@ var Machine = {};
             s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()),
                 Machine.ANSI.ANSI_BLUE);
 
-            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: " + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " + Machine.ANSI.invert(this.getIsAccepted() + mode ) + "\n" , Machine.ANSI.ANSI_LIGHT_GRAY);
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: " + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " + Machine.ANSI.invert(this.getIsAccepted() + mode) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
 
-            s = s + Machine.ANSI.colorize(this.getStack().characterDisplay() + "\n", Machine.ANSI.ANSI_BLUE) ;
+            s = s + Machine.ANSI.colorize(this.getStack().characterDisplay() + "\n", Machine.ANSI.ANSI_BLUE);
 
 
             var currentState = this.getCurrentState();
-            var topMostStackCharacter = this.stackPeek(); 
+            var topMostStackCharacter = this.stackPeek();
             var currentCharacter = null;
             var condition = null;
 
@@ -3353,6 +3462,433 @@ var Machine = {};
     };
 
     Machine.ClassUtils.extend(Machine.DPDA, Machine.BaseMachine);
+
+
+
+})();
+(function() {
+
+    /**
+     *
+     * This class represents a Deterministic Finite  Automaton (TM). For more information
+     * consult the wikipedia article at {@link http://en.wikipedia.org/wiki/Deterministic_finite_automaton}
+     * and also suggestions for further reading.
+     *
+     *
+     * @class TM
+     * @constructor
+     * @memberof Machine
+     * @augments {Machine.BaseMachine}
+     * @param {Object} attribs A configuration object
+     * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.
+     **/
+    Machine.TM = function(attribs) {
+        this._init(attribs);
+    };
+
+
+
+    Machine.TM.prototype = {
+
+        // Private Methods
+        _init: function(attribs) {
+
+            if (attribs) {
+                Machine.BaseMachine.prototype._init.call(this, attribs);
+            } else {
+                Machine.BaseMachine.prototype._init.call(this);
+            }
+
+
+
+            // The indicator that the TM has processed its last cell of 
+            // input and it is in an accepting state
+            this.isAccepted = false;
+
+
+            // Now iniitialize the tape. 
+            this.tape = new Machine.Tape({
+                alphabet: this.getAlphabet(),
+                chars: ""
+            });
+
+            // There is only one pointer on a TM tape
+            // We initialize it here at posiiton 0
+            this.pointerPosition = 0;
+
+            //Some custom listener functions for TM class
+            this.onAccept = function(state, stepCount, indexPointer) {};
+            this.onReject = function(state, stepCount, indexPointer) {};
+            this.onPointerChange = function(position) {};
+
+        },
+
+        //Public Methods
+
+
+
+        /**
+         * Returns whether the TM is in an accepting state.
+         * @method
+         * @return {Boolean} True if in accepted state.
+         */
+        getIsAccepted: function() {
+            return this.isAccepted;
+        },
+
+
+        /**
+         * Sets the value of the accepted state of the TM.
+         * @method
+         * @param {Boolean} isAccepted The new accepted state.
+         *
+         */
+        setIsAccepted: function(isAccepted) {
+            this.isAccepted = isAccepted;
+        },
+
+
+        /**
+         * Returns the tape pointer position.
+         * @method
+         * @return {Number} The pointer position.
+         *
+         */
+        getPointerPosition: function() {
+            return this.pointerPosition;
+        },
+
+        /**
+         * Sets the pointer position.
+         * @method
+         * @param {Number} pointerPosition The pointer position.
+         */
+        setPointerPosition: function(pointerPosition) {
+            this.pointerPosition = pointerPosition;
+            this.onPointerChange.call(this.pointerPosition);
+        },
+
+
+        /**
+         * Returns the tape object.
+         * @method
+         * @return {Machine.Tape} The input tape.
+         */
+        getTape: function() {
+            return this.tape;
+        },
+
+
+        /** 
+         * Sets the tape object. Beware when using this
+         * method, there are no checks of internal consistency
+         * with other aspects of the TM.
+         *
+         * @method
+         * @param {Machine.Tape} tape The tape
+         */
+        setTape: function(tape) {
+            this.tape = tape;
+        },
+
+
+        /**
+         * Retrieve the contents of the Turing machine tape. 
+         * @method 
+         * @returns {String} The Turing machine tape
+         */
+        getTapeContents: function() {
+            return this.getTape().getChars(); 
+        }, 
+
+        /**
+         * Sets the input string on the tape for the TM and
+         * sends the pointer back to the beginning of th string.
+         *
+         * @method
+         * @param {String} input The input string
+         *
+         */
+        setInputString: function(input) {
+            this.getTape().setChars(input);
+            this.setPointerPosition(0);
+
+        },
+
+        /** 
+         * Resets the current state to the initial state (i.e. start state)
+         * and resets the tape position to 0.
+         * @method
+         */
+        reset: function() {
+            Machine.BaseMachine.prototype.reset.call(this);
+            this.setPointerPosition(0);
+            this.setIsAccepted(false);
+        },
+
+
+
+        /** 
+         * Adds a transition.
+         * @method
+         * @param {Mahine.State} conditionState The condition state.
+         * @param {String} conditionCharacter The condition character.
+         * @param {Machine.State} transitionState  The state to transition to.
+         */
+        addTransitionByStatesAndCharacter: function(conditionState, currentCharacter, transitionAction, transitionArgument, transitionState) {
+
+            if (currentCharacter == Machine.Alphabet.EPSILON_STRING) {
+                throw new Error("Epsilon modifications not permitted in this machine");
+            }
+
+            if(transitionAction == Machine.Command.WRITE 
+                && (transitionArgument == null || transitionArgument.length != 1 || this.getAlphabet().contains(transitionArgument) == false)) {
+                throw new Error("Invalid argument for Turing Machine write:" + transitionArgument);                
+            }
+
+
+            var condition = new Machine.Condition({
+                state: conditionState,
+                character: currentCharacter
+            });
+
+            var command = new Machine.Command({
+                state: transitionState, 
+                action: transitionAction, 
+                argument: transitionArgument
+            });
+            this.addTransition(condition, command);
+        },
+
+        /** 
+         * Adds a transition by state label.
+         * @method
+         * @param {String} conditionStateLabel The condition state label.
+         * @param {String} conditionCharacter The condition character.
+         * @param {String} transitionStateLabel  The state label to transition to.
+         */
+        addTransitionByStateLabelsAndCharacter: function(conditionStateLabel, currentCharacter, transitionActionDescription, transitionArgument, transitionStateLabel) {
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel);
+            var transitionState = this.getStateTable().getStateByLabel(transitionStateLabel);
+            var transitionAction = Machine.Command.getActionFromDescription(transitionActionDescription);
+            this.addTransitionByStatesAndCharacter(conditionState, currentCharacter, transitionAction, transitionArgument, transitionState);
+        },
+
+
+        /**
+         * Removes a transition by label and character
+         * @method
+         * @param {String} conditionStateLabel The condition state label
+         * @param {String} conditionCharacter The condition character
+         */
+        removeTransitionByStateLabelsAndCharacter: function(conditionStateLabel, conditionCharacter) {
+            var conditionState = this.getStateTable().getStateByLabel(conditionStateLabel);
+            var condition = new Machine.Condition({
+                state: condiitonState,
+                character: conditionCharacter
+            });
+            this.removeTrandition(condition);
+        },
+
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly. 
+         * 
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function(){ 
+
+            // we first check to see if we're already in an accepting state. 
+            // This is usually the case when the initial state is already an
+            // accepting state. We don't want to try to check to see if there
+            // is a condition to advance a command. 
+
+
+            var currentState = this.getCurrentState(); 
+
+            if (currentState.getIsAccepting() == true) {
+                this.setIsHalted(true);
+                this.setIsAccepted(true);
+                this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
+                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
+                return true;
+            }
+
+
+        }, 
+
+        /** 
+         * Executes one step of the TM.
+         * @method
+         * @return {Boolean} True if halted
+         */
+        step: function() {
+            if (this.getIsHalted() == true) {
+                //The TM is halted so there is nothing do so, so return. 
+                return true;
+
+            }
+
+            // Increment the stepCount
+            this.setStepCount(this.getStepCount() + 1);
+            var currentState = this.getCurrentState();
+
+
+            // Check to see whether we are in a haltable situation
+            if(this.halt() == true){
+                return true; 
+            }
+
+
+
+            var currentCharacter = this.getTape().charAt(this.getPointerPosition());
+
+
+            var condition = new Machine.Condition({
+                state: currentState,
+                character: currentCharacter
+            });
+
+
+            var command = this.getTransitionFunction().getCommand(condition);
+
+            if (command == null) {
+                // There was no transition for the appropriate condition
+                // so we have to halt and reject.
+                this.setIsHalted(true);
+                this.setIsAccepted(false);
+                this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
+                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
+                return true;
+            }
+
+
+
+
+
+            // Left Move
+            if (command.getAction() == Machine.Command.MOVE_LEFT) {
+
+                if (this.getPointerPosition() == 0) {
+                    this.getTape().prepend(this.getAlphabet().getBlank());
+                } else {
+                    this.setPointerPosition((this.getPointerPosition()-1));
+                }
+
+            }
+
+
+            // Right Move
+            else if (command.getAction() == Machine.Command.MOVE_RIGHT) {
+                if (this.getPointerPosition() >= this.getTape().length() - 1) {
+                    this.getTape().append(this.getAlphabet().getBlank());
+                }
+                this.setPointerPosition(this.getPointerPosition() + 1);
+
+            }
+
+            // Erase
+            else if (command.getAction() == Machine.Command.ERASE) {
+                this.getTape().alter(this.getPointerPosition(), this.getAlphabet().getBlank()); 
+
+            }
+
+            // Write
+            else if (command.getAction() == Machine.Command.WRITE) {
+
+                var character = command.getArgument();
+                if (character == null) {
+                    throw  new Error("Missing parameter for write.");
+                }
+
+                this.getTape().alter(this.getPointerPosition(), character);
+
+            } else if (command.getAction() == Machine.Command.NOOP) {
+                //Nothing
+            }
+
+
+
+            // Change the state
+            this.setCurrentState(command.getState());
+
+
+            // Are we ready to halt? If so check for the appropriate condition.
+            if(this.halt() == true){
+                return true; 
+            }
+
+
+
+            // Fire the event
+            this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
+
+            return false;
+
+        },
+
+
+        /**
+         * Runs the TM with a specified maximum number of steps.
+         * @method
+         * @param {Number} maxSteps The maximum number of steps to execute
+         * @returns {Boolean} True if the machine has halted
+         */
+        run: function(maxSteps) {
+            for (var i = 0; i < maxSteps; i++) {
+                var returned = this.step();
+                if (returned == true) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+
+
+        /**
+         * Creates a human readable string describing the TM.
+         * @method
+         * @return {String} The human readable string.
+         */
+        characterDisplay: function() {
+            var s = Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED);
+
+            s = s + Machine.ANSI.colorize(this.getTape().characterDisplay(this.getPointerPosition()),
+                Machine.ANSI.ANSI_YELLOW);
+
+            s = s + "\n";
+
+            s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()),
+                Machine.ANSI.ANSI_BLUE);
+
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: " + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " + Machine.ANSI.invert(this.getIsAccepted()) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
+
+            var currentState = this.getCurrentState();
+         
+            var character = this.getTape().charAt(this.getPointerPosition());
+            var condition = new Machine.Condition({
+                    state: currentState,
+                    character: character
+                });
+            
+
+            s = s + Machine.ANSI.colorize(this.getTransitionFunction().characterDisplay(condition), Machine.ANSI.ANSI_GREEN);
+
+            s = s + Machine.StringUtils.border((this.getTape().length() * 5) + 10, Machine.ANSI.ANSI_RED);
+
+
+
+            return s;
+
+        }
+
+
+
+    };
+
+    Machine.ClassUtils.extend(Machine.TM, Machine.BaseMachine);
 
 
 

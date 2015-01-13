@@ -13,7 +13,7 @@
      * @augments {Machine.BaseMachine}
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The alphabet.    
-     * @param {Boolean} [allowEpsilonTransitions=false] Permit epsilon transitions 
+     * @param {Boolean} [attribs.allowEpsilonTransitions=false] Permit epsilon transitions 
      **/
     Machine.DFA = function(attribs) {
         this._init(attribs);
@@ -228,7 +228,36 @@
 
 
 
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly. 
+         * 
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function(){ 
+            if(this.getPointerPosition() >= this.getTape().length() && this.getTransitionFunction().hasEpsilonTransition(this.getCurrentState()) == false ){
+                
+                this.setIsHalted(true); 
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if(this.getCurrentState().getIsAccepting() == true){
+                    this.setIsAccepted(true);
+                    this.onAccept.call(this.getCurrentState(),this.getStepCount(), this.getPointerPosition());
+                } else {
+                    this.setIsAccepted(false); 
+                    this.onReject.call(this.getCurrentState(),this.getStepCount(), this.getPointerPosition());
 
+                }
+
+                this.onHalt.call(this.getCurrentState(),this.getStepCount(), this.getPointerPosition());
+                return true; 
+            }
+
+            return false; 
+
+
+        },
 
         /** 
          * Executes one step of the DFA. 
@@ -246,21 +275,7 @@
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getPointerPosition() >= this.getTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false ){
-                
-                this.setIsHalted(true); 
-                // We have run out of characters to read
-                // Are we in an accepting state?
-                if(currentState.getIsAccepting() == true){
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState,this.getStepCount(), this.getPointerPosition());
-                } else {
-                    this.setIsAccepted(false); 
-                    this.onReject.call(currentState,this.getStepCount(), this.getPointerPosition());
-
-                }
-
-                this.onHalt.call(currentState,this.getStepCount(), this.getPointerPosition());
+            if(this.halt() == true){
                 return true; 
             }
 
@@ -313,6 +328,14 @@
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
+
+
+            // Check again for halting conditions
+
+            if(this.halt() == true){
+                return true; 
+            }
+
 
             return false; 
 

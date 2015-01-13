@@ -23,26 +23,26 @@
 
 
     /**
-     * Accepting mode by state. 
-     * 
+     * Accepting mode by state.
+     *
      * @constant
      * @static
      * @type {String}
-     * @memberOf  Member.DPDA 
+     * @memberOf  Member.DPDA
      */
-    Machine.DPDA.ACCEPT_BY_STATE = "0"; 
+    Machine.DPDA.ACCEPT_BY_STATE = "0";
 
 
 
     /**
      * Accepting mode by stack
-     * 
+     *
      * @constant
      * @static
      * @type {String}
-     * @memberOf  Member.DPDA 
+     * @memberOf  Member.DPDA
      */
-    Machine.DPDA.ACCEPT_BY_STACK = "1"; 
+    Machine.DPDA.ACCEPT_BY_STACK = "1";
 
     /**
      * The hashset whih contains all the official PDA acceptance modes.
@@ -51,9 +51,9 @@
      * @type {Machine.HashTable}
      * @memberOf  Machine.DPDA
      */
-    Machine.DPDA.ACCEPTANCE_MODES_SET = new Machine.HashTable(); 
-    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STATE, "State"); 
-    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STACK, "Stack"); 
+    Machine.DPDA.ACCEPTANCE_MODES_SET = new Machine.HashTable();
+    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STATE, "State");
+    Machine.DPDA.ACCEPTANCE_MODES_SET.put(Machine.DPDA.ACCEPT_BY_STACK, "Stack");
 
     Machine.DPDA.prototype = {
 
@@ -73,7 +73,7 @@
             }
 
 
-            this.acceptanceMode = null; 
+            this.acceptanceMode = null;
 
 
             // The indicator that the DPDA has processed its last cell of 
@@ -84,12 +84,12 @@
                 alphabet: this.getStackAlphabet()
             });
 
-            if(attribs && attribs.hasOwnProperty("initialStackSymbol")){
-                this.setInitialStackSymbol(attribs.initialStackSymbol); 
-            } else { 
-                this.setInitialStackSymbol(this.getStackAlphabet().getBlank()); 
+            if (attribs && attribs.hasOwnProperty("initialStackSymbol")) {
+                this.setInitialStackSymbol(attribs.initialStackSymbol);
+            } else {
+                this.setInitialStackSymbol(this.getStackAlphabet().getBlank());
             }
-            
+
 
 
             // Now iniitialize the tape. 
@@ -114,56 +114,56 @@
         },
 
         //Public Methods
-        
+
         /**
-         * Retieves the acceptance mode of the DPDA. 
+         * Retieves the acceptance mode of the DPDA.
          * @returns {String} The acceptance mode.
-         * 
+         *
          */
-        getAcceptanceMode: function(){
-            return this.acceptanceMode; 
+        getAcceptanceMode: function() {
+            return this.acceptanceMode;
         },
 
 
         /**
-         * Retieves the acceptance mode name of the DPDA. 
+         * Retieves the acceptance mode name of the DPDA.
          * @returns {String} The acceptance mode name
-         * 
+         *
          */
-        getAcceptanceModeName: function(){
-            return  Machine.DPDA.ACCEPTANCE_MODES_SET.get(this.getAcceptanceMode()); 
+        getAcceptanceModeName: function() {
+            return Machine.DPDA.ACCEPTANCE_MODES_SET.get(this.getAcceptanceMode());
         },
 
         /**
          * Sets the acceptance mode.
          * @param {String} acceptanceMode The acceptance mode.
-         * 
+         *
          */
-        setAcceptanceMode: function(acceptanceMode){
-            this.acceptanceMode = acceptanceMode; 
-        }, 
+        setAcceptanceMode: function(acceptanceMode) {
+            this.acceptanceMode = acceptanceMode;
+        },
 
         /**
          * Retieves the initial stack character.
          * @method
-         * @returns {String} The initial stack character. 
+         * @returns {String} The initial stack character.
          */
-        getInitialStackSymbol: function() { 
+        getInitialStackSymbol: function() {
             return this.initialStackSymbol;
-        }, 
+        },
 
         /**
-         * Sets the initial stack character. 
+         * Sets the initial stack character.
          * @method
          * @param {String} initialStackSymbol The initial stack character
          */
-        setInitialStackSymbol: function(initialStackSymbol){
-            if(this.getStackAlphabet().contains(initialStackSymbol) == false){ 
-                throw new Error("Invalid initial stack character"); 
+        setInitialStackSymbol: function(initialStackSymbol) {
+            if (this.getStackAlphabet().contains(initialStackSymbol) == false) {
+                throw new Error("Invalid initial stack character");
             }
 
             this.initialStackSymbol = initialStackSymbol;
-        }, 
+        },
 
 
         /**
@@ -393,6 +393,51 @@
             this.removeTrandition(condition);
         },
 
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly.
+         *
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function() {
+
+            var currentState = this.getCurrentState(); 
+            var topmostStackCharacter = this.stackPeek(); 
+
+
+            // Acceptance in a DPDA happens when the input is expired and the machine is in an accepting state
+            // or the input has been emptied, the stack has been emptied and there are no remaining epsilon transitions
+            // 
+            // When the DPDA has run out input it can still take epsilon transitions
+            if (this.getPointerPosition() >= this.getTape().length() && (this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
+                    topmostStackCharacter == Machine.Alphabet.EPSILON_STRING)) {
+
+                this.setIsHalted(true);
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if (currentState.getIsAccepting() == true) {
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
+
+                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STATE);
+                } else if (this.getStack().isEmpty() == true) {
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
+
+                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STACK);
+                } else {
+                    this.setIsAccepted(false);
+                    this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
+
+                }
+
+                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
+                return true;
+            }
+
+        },
+
 
 
         /** 
@@ -412,36 +457,11 @@
             var currentState = this.getCurrentState();
             var topmostStackCharacter = this.stackPeek();
 
-
-            // Acceptance in a DPDA happens when the input is expired and the machine is in an accepting state
-            // or the input has been emptied, the stack has been emptied and there are no remaining epsilon transitions
-            // 
-            // When the DPDA has run out input it can still take epsilon transitions
-            if (this.getPointerPosition() >= this.getTape().length() && ( this.getTransitionFunction().hasEpsilonTransition(currentState) == false ||
-                topmostStackCharacter == Machine.Alphabet.EPSILON_STRING)){
-
-                this.setIsHalted(true);
-                // We have run out of characters to read
-                // Are we in an accepting state?
-                if (currentState.getIsAccepting() == true)  {
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
-
-                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STATE); 
-                } else if(this.getStack().isEmpty() == true){
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState, this.getStepCount(), this.getPointerPosition());
-
-                    this.setAcceptanceMode(Machine.DPDA.ACCEPT_BY_STACK); 
-                }else {
-                    this.setIsAccepted(false);
-                    this.onReject.call(currentState, this.getStepCount(), this.getPointerPosition());
-
-                }
-
-                this.onHalt.call(currentState, this.getStepCount(), this.getPointerPosition());
-                return true;
+            // Check for halting conditions
+            if(this.halt() == true){
+                return true; 
             }
+
 
 
             var currentCharacter = null;
@@ -480,16 +500,16 @@
 
 
             // We always pop try to pop one character, per convention
-            if(condition.getStackElement() != Machine.Alphabet.EPSILON_STRING){
-                var popCharacter = this.stackPop(); 
+            if (condition.getStackElement() != Machine.Alphabet.EPSILON_STRING) {
+                var popCharacter = this.stackPop();
             }
 
 
 
-            if(command.getAction() == Machine.Command.STACK_CHANGE && command.getArgument() != Machine.Alphabet.EPSILON_STRING){
-                this.stackPush(command.getArgument()); 
+            if (command.getAction() == Machine.Command.STACK_CHANGE && command.getArgument() != Machine.Alphabet.EPSILON_STRING) {
+                this.stackPush(command.getArgument());
             }
-            
+
 
 
             // Increment the pointer position 
@@ -499,6 +519,14 @@
 
             // Change the state
             this.setCurrentState(command.getState());
+
+
+            //Check for halting conditions again
+            if(this.halt() == true){
+                return true; 
+            }
+
+
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getPointerPosition());
@@ -539,8 +567,8 @@
                 Machine.ANSI.ANSI_YELLOW);
 
             var mode = "";
-            if(this.getIsAccepted()){ 
-                mode = "[" + this.getAcceptanceModeName() + "]"; 
+            if (this.getIsAccepted()) {
+                mode = "[" + this.getAcceptanceModeName() + "]";
             }
 
             s = s + "\n";
@@ -548,13 +576,13 @@
             s = s + Machine.ANSI.colorize(this.getStateTable().characterDisplay(this.getCurrentState().getLabel()),
                 Machine.ANSI.ANSI_BLUE);
 
-            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: " + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " + Machine.ANSI.invert(this.getIsAccepted() + mode ) + "\n" , Machine.ANSI.ANSI_LIGHT_GRAY);
+            s = s + Machine.ANSI.colorize("#" + this.getStepCount() + " Halted: " + Machine.ANSI.invert(this.getIsHalted()) + " Accepted: " + Machine.ANSI.invert(this.getIsAccepted() + mode) + "\n", Machine.ANSI.ANSI_LIGHT_GRAY);
 
-            s = s + Machine.ANSI.colorize(this.getStack().characterDisplay() + "\n", Machine.ANSI.ANSI_BLUE) ;
+            s = s + Machine.ANSI.colorize(this.getStack().characterDisplay() + "\n", Machine.ANSI.ANSI_BLUE);
 
 
             var currentState = this.getCurrentState();
-            var topMostStackCharacter = this.stackPeek(); 
+            var topMostStackCharacter = this.stackPeek();
             var currentCharacter = null;
             var condition = null;
 

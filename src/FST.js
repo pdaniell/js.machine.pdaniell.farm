@@ -14,7 +14,7 @@
      * @param {Object} attribs A configuration object
      * @param {Machine.Alphabet} [attribs.alphabet={@link Machine.Alphabet.UNRESTRICTED}] The input alphabet.    
      * @param {Machine.Alphabet} [attribs.outputAlphabet={@link Machine.Alphabet.UNRESTRICTED}] The output alphabet.
-     * @param {Boolean} [allowEpsilonTransitions=true] Permit epsilon transitions 
+     * @param {Boolean} [attribs.allowEpsilonTransitions=true] Permit epsilon transitions 
      **/
     Machine.FST = function(attribs) {
         this._init(attribs);
@@ -329,7 +329,36 @@
         }, 
 
 
+        /**
+         * Checks to see if the machine should halt and configures the machine
+         * accordingly. 
+         * 
+         * @method
+         * @return {Boolean} True if the machine has halted
+         */
+        halt: function(){ 
+            var currentState = this.getCurrentState(); 
 
+
+            if(this.getInputPointerPosition() >= this.getInputTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false){
+                
+                this.setIsHalted(true); 
+                // We have run out of characters to read
+                // Are we in an accepting state?
+                if(currentState.getIsAccepting() == true){
+                    this.setIsAccepted(true);
+                    this.onAccept.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                } else {
+                    this.setIsAccepted(false); 
+                    this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+
+                }
+
+                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+                return true; 
+            }
+
+        }, 
 
 
         /** 
@@ -348,21 +377,8 @@
             this.setStepCount(this.getStepCount() + 1); 
             var currentState = this.getCurrentState(); 
 
-            if(this.getInputPointerPosition() >= this.getInputTape().length() && this.getTransitionFunction().hasEpsilonTransition(currentState) == false){
-                
-                this.setIsHalted(true); 
-                // We have run out of characters to read
-                // Are we in an accepting state?
-                if(currentState.getIsAccepting() == true){
-                    this.setIsAccepted(true);
-                    this.onAccept.call(currentState,this.getStepCount(), this.getInputPointerPosition());
-                } else {
-                    this.setIsAccepted(false); 
-                    this.onReject.call(currentState,this.getStepCount(), this.getInputPointerPosition());
 
-                }
-
-                this.onHalt.call(currentState,this.getStepCount(), this.getInputPointerPosition());
+            if(this.halt() == true){
                 return true; 
             }
 
@@ -423,6 +439,13 @@
 
             // Change the state
             this.setCurrentState(command.getState()); 
+
+
+            // Check again for halting conditions
+            if(this.halt() == true){
+                return true; 
+            }
+
 
             // Fire the event
             this.onStep.call(condition, command, this.getStepCount(), this.getInputPointerPosition());
