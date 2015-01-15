@@ -1,0 +1,31 @@
+{
+  "name": "machine.js",
+  "main": "machine.js",
+  "version": "0.0.1",
+  "homepage": "https://github.com/pdaniell/machine.js",
+  "authors": [
+    "Paul Daniell <paul.daniell@gmail.com>"
+  ],
+  "description": "A Finite State Machine Library",
+  "moduleType": [
+    "amd",
+    "globals",
+    "node"
+  ],
+  "keywords": [
+    "machine",
+    "turing",
+    "dfa",
+    "fst",
+    "pda",
+    "dpda"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
