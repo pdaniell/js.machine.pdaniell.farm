@@ -1,6 +1,6 @@
 {
   "name": "machine.js",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha",
   "description": "A Finite State Machine Library",
   "main": "machine.js",
   "scripts": {

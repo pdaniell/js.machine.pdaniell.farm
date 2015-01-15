@@ -1,7 +1,7 @@
 {
   "name": "machine.js",
   "main": "machine.js",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha",
   "homepage": "https://github.com/pdaniell/machine.js",
   "authors": [
     "Paul Daniell <paul.daniell@gmail.com>"
