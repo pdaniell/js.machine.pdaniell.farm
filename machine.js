@@ -32,7 +32,7 @@ var Machine = {};
 (function() {
 
     Machine = {
-        version: '0.0.1',
+        version: '1.0.0-alpha',
         author: 'Paul Daniell'
     };
 
